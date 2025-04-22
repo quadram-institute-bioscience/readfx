@@ -4,6 +4,7 @@
 import os, algorithm
 const klibVer* = "0.2"
 
+#[
 type
   FQRecord* = object
     name*: string
@@ -11,7 +12,7 @@ type
     sequence*: string
     quality*: string# optional
     status, lastChar: int
-
+]#
 #################
 # gzip file I/O #
 #################
