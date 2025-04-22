@@ -1,0 +1,29 @@
+name: Nim Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        nim-version: ['1.6.x', 'stable']
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Nim
+      uses: alaviss/setup-nim@v1
+      with:
+        version: ${{ matrix.nim-version }}
+        
+    - name: Install Dependencies
+      run: nimble install -y
+      
+    - name: Run Tests
+      run: nimble test

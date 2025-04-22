@@ -41,3 +41,40 @@ test "readFQPtr test.fasta.gz":
     recs.add($rec)
   res = $recs.join("\n") & "\n"
   check $toMD5($res) == "21aa45c3b9110a7df328680f8b8753e8"#  gzip -dc tests/test.fasta.gz | md5sum
+
+
+test "readFastx test.fasta.gz":
+  var res = ""
+  var r: FQRecord
+  var f = xopen[GzFile]("./tests/test.fasta.gz")
+  defer: f.close()
+  while f.readFastx(r):
+    res = res & $r & "\n"
+  check $toMD5($res) == "21aa45c3b9110a7df328680f8b8753e8"#  gzip -dc tests/test.fasta.gz | md5sum
+
+
+test "readFastx seq.txt":
+  # tests mixed fa and fastq and messy input
+  var i = 0
+  var r: FQRecord
+  var f = xopen[GzFile]("./tests/seq.txt")
+  defer: f.close()
+  while f.readFastx(r):
+    inc i
+    check r.name == $i
+    if i == 1:
+      check len(r.sequence) == 15 and len(r.quality) == 0
+    elif i == 2:
+      check len(r.sequence) == 10 and len(r.comment) > 0
+    elif i == 3:
+      check len(r.quality) == len(r.sequence)
+
+
+test "readFastx SRR396637_1.seqs1-2.fastq.gz":
+  var res = ""
+  var r: FQRecord
+  var f = xopen[GzFile]("./tests/SRR396637_1.seqs1-2.fastq.gz")
+  defer: f.close()
+  while f.readFastx(r):
+    res = res & $r & "\n"
+  check $toMD5($res) == "299882b15a2dc87f496a88173dd485ad"#  gzip -dc SRR396637_1.seqs1-2.fastq.gz | md5sum

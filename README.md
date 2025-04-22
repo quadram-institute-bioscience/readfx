@@ -1,5 +1,7 @@
 # ReadFX - Nim FASTQ/FASTA Parser
 
+![Nim Tests](https://github.com/telatin/readfx/workflows/Nim%20Tests/badge.svg)
+
 ReadFX is a Nim library for parsing FASTA and FASTQ files (collectively known as FASTX). It combines two approaches to sequence file parsing:
 
 1. A Nim wrapper around Heng Li's kseq.h C library (klib)
