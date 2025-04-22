@@ -1,6 +1,6 @@
 # ReadFX - Nim FASTQ/FASTA Parser
 
-![Nim Tests](https://github.com/telatin/readfx/workflows/Nim%20Tests/badge.svg)
+[![Nim Tests](https://github.com/quadram-institute-bioscience/readfx/actions/workflows/test.yml/badge.svg)](https://github.com/quadram-institute-bioscience/readfx/actions/workflows/test.yml)
 
 ReadFX is a Nim library for parsing FASTA and FASTQ files (collectively known as FASTX). It combines two approaches to sequence file parsing:
 
@@ -114,8 +114,8 @@ while f.readFastx(r):
 
 ReadFX is designed for efficiency, with the pointer-based `readFQPtr` implementation offering the best performance for most use cases. The native Nim implementation provides more flexibility at a slight performance cost.
 
-## Todo
+## Authors
 
-[ ]  The two libraries use different definitions for FQRecord - one as an object and one as a tuple with different field orders. We
-  should unify them to have a single consistent type.
-[ ] 
+- Original library by Heng Li (kseq.h) and Andreas Wilm ([readfq](https://github.com/andreas-wilm/nimreadfq))
+- Updated and maintained by the [Quadram Institute Bioscience](https://www.quadram.ac.uk) Core Bioinformatics team
+- Co-authored by [Claude code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview)

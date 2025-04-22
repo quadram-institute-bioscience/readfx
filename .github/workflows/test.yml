@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        nim-version: ['1.6.x', 'stable']
+        nim-version: ['1.6.x', '2.0.x']
 
     steps:
     - uses: actions/checkout@v3
