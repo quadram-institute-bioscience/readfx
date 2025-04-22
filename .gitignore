@@ -6,3 +6,4 @@ benchmark/benchmark
 benchmark/M_abscessus_HiSeq.fq
 benchmark/M_abscessus_HiSeq.fq.gz
 benchmark/biofast-data-v1.tar.gz
+.vscode/

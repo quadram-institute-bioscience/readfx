@@ -1,7 +1,16 @@
-import os, algorithm
+###
+### BASED ON THE "BioFast" repository by Heng Li (https://github.com/lh3/biofast)
 
+import os, algorithm
 const klibVer* = "0.2"
 
+type
+  FQRecord* = object
+    name*: string
+    comment*: string# optional
+    sequence*: string
+    quality*: string# optional
+    status, lastChar: int
 
 #################
 # gzip file I/O #
@@ -170,8 +179,9 @@ proc readLine*[T](f: var Bufio[T], buf: var string): bool {.discardable.} =
 # Fastx Reader #
 ################
 
-type
-  FQRecord* = tuple[sequence, quality, name, comment: string, status, lastChar: int]
+
+#type
+#  FQRecord* = tuple[sequence, quality, name, comment: string, status, lastChar: int]
 
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
   var x: int
