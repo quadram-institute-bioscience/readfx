@@ -260,3 +260,35 @@ test "utils: filtPolyX() only tail!":
     # Shouldn't trim (poly-A length is 8, minLen is 10)
     check result.sequence == ""
     check result.quality == ""
+
+test "seq content":
+  var r = FQRecord()
+  r.sequence = "ACGT"
+  r.quality  = "IIII"
+  var sc = SeqComp()
+  sc = composition(r)
+  check sc.A == 1
+  check sc.C == 1
+  check sc.G == 1
+  check sc.T == 1
+  check sc.GC == 0.5
+
+  r.sequence = "aaaaatttttccggNNNnnnnnnnnnnxx"
+  r.quality  = "IIIIIIIIIIIIIIIIIIIIIIIIIIIII"
+  sc = composition(r)
+  check sc.A == 5
+  check sc.C == 2
+  check sc.G == 2
+  check sc.T == 5
+  check sc.GC == float(4/14)
+  check sc.N == 13
+  check sc.Other == 2
+
+test "GC content":
+  var r = FQRecord()
+  r.sequence = "GGGGGGGTA"
+  r.quality  = "IIIIIII88"
+
+  var sc = composition(r)
+  var gc = gcContent(r.sequence)
+  check sc.GC == gc

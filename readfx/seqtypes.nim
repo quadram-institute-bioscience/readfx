@@ -11,5 +11,13 @@ type
     sequence*: string
     quality*: string# optional
     status*, lastChar*: int
+  SeqComp* = object
+    A*: int
+    C*: int
+    G*: int
+    T*: int
+    GC*: float
+    N*: int
+    Other*: int
   StrandDirection* = enum
     Forward, Reverse

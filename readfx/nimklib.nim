@@ -218,10 +218,10 @@ proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
   if r.sequence.len != r.quality.len: r.status = -4; return false
   return true
 
-#############
-# Intervals #
-#############
-
+#######################################
+# Intervals (not implemented) #
+#######################################
+#[
 type
   Interval*[S,T] = tuple[st, en: S, data: T, max: S]
 
@@ -286,3 +286,4 @@ iterator overlap*[S,T](a: seq[Interval[S,T]], st: S, en: S): Interval[S,T] {.noS
     elif x < a.len and a[x].st < en: # need to push the right child
       if st < a[x].en: yield a[x] # test if x overlaps the query
       stack[t] = (k - 1, x + (1 shl (k - 1)), 0); t += 1
+]#

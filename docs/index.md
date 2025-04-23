@@ -47,9 +47,10 @@ while f.readFastx(r):
 
 ## Documentation
 
-- [API Reference](API.md) - Detailed API documentation
 - [Methods](METHODS.md) - Detailed documentation of all available methods
+  - [Utils methods](UTILS.md) - Utility methods for manipulating sequence records
 - [Data Structure](DATA_STRUCTURE.md) - Overview of internal data structures
-- [FQRECORD Utils](FQRECORD_UTILS.md) - Utilities for working with sequence records
-- [Parsing](PARSING.md) - Details about the parsing implementation
+- [Parsing algorithms](PARSING.md) - Details about the parsing implementation
+
 - [Repository Structure](REPO_STRUCTURE.md) - Overview of the project organization
+- [API Reference](API.md) - Detailed API documentation

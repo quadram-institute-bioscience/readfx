@@ -339,6 +339,23 @@ proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord =
   if record.quality.len > 0:
     result.quality = record.quality[start ..< endPos]
 
+proc composition*(record: FQRecord): SeqComp =
+  ## Calculate composition of a DNA Sequence
+  ## Returns a SeqComp object with counts of A, C, G, T, N, and Other (int) and GC content (float)
+  
+  for c in record.sequence:
+    case c:
+      of 'A', 'a': inc result.A
+      of 'C', 'c': inc result.C
+      of 'G', 'g': inc result.G
+      of 'T', 't': inc result.T
+      of 'N', 'n': inc result.N
+      else: inc result.Other
+  
+  result.GC = float(result.G + result.C) / float(record.sequence.len - result.N - result.Other)
+
+
+
 proc gcContent*(sequence: string): float =
   ## Calculate GC content of a DNA sequence
   ## 
@@ -356,6 +373,10 @@ proc gcContent*(sequence: string): float =
       inc gcCount
       
   return gcCount / sequence.len
+
+proc gcContent*(record: FQRecord): float =
+  ## Calculate GC content of a FQRecord (using its sequence)
+  return gcContent(record.sequence)
 
 proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N') =
   ## Mask sequence positions with low quality scores

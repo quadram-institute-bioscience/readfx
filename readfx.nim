@@ -78,6 +78,8 @@ iterator readFQ*(path: string): FQRecord =
 proc fqfmt(name: string, comment: string, sequence: string, quality: string): string =
   var fastq = false
   var header = ">"
+  if len(sequence) == 0:
+    return ""
   if len(quality) > 0:
     fastq = true
     header = "@"
