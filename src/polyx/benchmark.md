@@ -1,4 +1,4 @@
-| Command | Mean [s] | Min [s] | Max [s] | Relative |
+| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
 |:---|---:|---:|---:|---:|
-| `./polyx test.fq.gz > test_trimmed.fq` | 7.405 ± 0.214 | 7.144 | 7.829 | 2.19 ± 0.08 |
-| `./polyx_threads test.fq.gz > test_trimmed_threads.fq` | 3.385 ± 0.065 | 3.303 | 3.498 | 1.00 |
+| `./polyx test.fq.gz` | 934.2 ± 21.4 | 909.2 | 974.0 | 1.05 ± 0.04 |
+| `./polyx_threads test.fq.gz` | 887.3 ± 26.9 | 867.5 | 944.7 | 1.00 |

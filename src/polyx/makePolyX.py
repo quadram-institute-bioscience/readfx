@@ -58,7 +58,7 @@ def main():
         # Using I (high quality) for main sequence and 9 (lower quality) for polytail
         # with ! as a quality marker between them
         if seq_length > 0:
-            qual = "I" * (seq_length - 1) + "!" + "9" * polytail_length
+            qual = "I" * (seq_length - 1) + "<" + ">" + "9" * (polytail_length - 1)
         else:
             qual = "9" * polytail_length
             

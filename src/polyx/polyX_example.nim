@@ -14,4 +14,6 @@ when isMainModule:
 
     
   for rec in readfq(inputFile):
-    echo filtPolyX(rec, minLen = 10)
+    let s = filtPolyX(rec, minLen = 10)
+    if len(s.sequence) > 0:
+      echo s

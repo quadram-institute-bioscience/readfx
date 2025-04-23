@@ -32,12 +32,9 @@ make test        # Generates test data and runs both implementations
 
 ## Performance
 
-Multi-threaded implementation was found in the example approximately 2.2x faster than single-threaded:
+see [benchmark.md (100,000 reads)](benchmark.md) and [benchmark (1M reads)](benchmark_1M.md) for details.
 
-| Command | Mean [s] | Relative |
-|:---|---:|---:|
-| `./polyx test.fq.gz` | 7.405 | 2.19 |
-| `./polyx_threads test.fq.gz` | 3.385 | 1.00 |
+
 
 ## Test Data Generation
 
