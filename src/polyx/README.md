@@ -1,0 +1,1 @@
+examples for polytail trimming
