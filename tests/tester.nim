@@ -78,3 +78,185 @@ test "readFastx SRR396637_1.seqs1-2.fastq.gz":
   while f.readFastx(r):
     res = res & $r & "\n"
   check $toMD5($res) == "299882b15a2dc87f496a88173dd485ad"#  gzip -dc SRR396637_1.seqs1-2.fastq.gz | md5sum
+
+test "utils: revCompl()":
+  var r = FQRecord()
+  r.sequence = "GAAA"
+  r.quality  = "IIIA"
+  r.revCompl()
+  check r.sequence == "TTTC"
+  check r.quality == "AIII"
+
+test "utils: maskLowQuality()":
+  var r = FQRecord()
+  r.sequence = "GAAATTT"
+  r.quality  = "IIIA888"
+  r.maskLowQuality(25)
+  check r.sequence == "GAAANNN"
+  check r.quality == "IIIA888"
+
+test "utils: trimStart()":
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = "IIIA888"
+    let result = trimStart(r, 3)
+    check result.sequence == "ATTT"
+    check result.quality == "A888"
+  
+  # Zero or negative bases parameter
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = "IIIA888"
+    let result = trimStart(r, 0)
+    check result.sequence == "GAAATTT"
+    check result.quality == "IIIA888"
+  
+  # Trim more bases than sequence length
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = "IIIA888"
+    let result = trimStart(r, 10)
+    check result.sequence == ""
+    check result.quality  == ""
+  
+  # FASTA record (no quality)
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = ""
+    let result = trimStart(r, 3)
+    check result.sequence == "ATTT"
+    check result.quality  == ""
+
+test "utils: trimEnd()":
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = "IIIA888"
+    let result = trimEnd(r, 3)
+    check result.sequence == "GAAA"
+    check result.quality  == "IIIA"
+  
+  # Zero or negative bases parameter
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = "IIIA888"
+    let result = trimEnd(r, 0)
+    check result.sequence == "GAAATTT"
+    check result.quality  == "IIIA888"
+  
+  # Trim more bases than sequence length
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = "IIIA888"
+    let result = trimEnd(r, 10)
+    check result.sequence == ""
+    check result.quality == ""
+  
+  # FASTA record (no quality)
+  block:
+    var r = FQRecord()
+    r.sequence = "GAAATTT"
+    r.quality  = ""
+    let result = trimEnd(r, 3)
+    check result.sequence == "GAAA"
+    check result.quality  == ""
+
+
+test "utils: filtPolyX()":
+  # Example with long poly-A tail
+  block:
+    var r = FQRecord()
+    r.sequence = "ACGTAAAAAAAAAAAAA" # 5 bases + 12 As
+    r.quality  = "IIIIIIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Should trim (poly-A length is 12, minLen is 10)
+    check result.sequence == "ACGT"
+    check result.quality == "IIII"
+  
+  # Example with poly-A containing mismatches
+  block:
+    var r = FQRecord()
+    r.sequence = "ACGTAAAAACAAAAAAAA" # 5 bases + A's with C mismatch
+    r.quality  = "IIIIIIIIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Should trim despite mismatch (12 As with 1 mismatch)
+    check result.sequence == "ACGT"
+    check result.quality == "IIII"
+  
+  # Example with lowercase bases
+  block:
+    var r = FQRecord()
+    r.sequence = "ACGTaaaaaaaaaaa" # 5 bases + 10 lowercase a's
+    r.quality  = "IIIIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Should trim (lowercase should be handled)
+    check result.sequence == "ACGT"
+    check result.quality == "IIII"
+  
+  # Example with poly-T instead of poly-A
+  block:
+    var r = FQRecord()
+    r.sequence = "ACGATTTTTTTTTTTTT" # 5 bases + 12 T's
+    r.quality  = "IIIIIIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Should trim poly-T
+    check result.sequence == "ACGA"
+    check result.quality == "IIII"
+  
+  # Example with N's in poly-A tail
+  block:
+    var r = FQRecord()
+    r.sequence = "ACGTAAAAANAAAAAA" # 5 bases + As with N
+    r.quality  = "IIIIIIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Should trim (N counts as A)
+    check result.sequence == "ACGT"
+    check result.quality == "IIII"
+  
+  # Example with short read
+  block:
+    var r = FQRecord()
+    r.sequence = "AAA"
+    r.quality  = "III"
+    let result = filtPolyX(r, minLen = 10)
+    # Shouldn't trim (read too short)
+    check result.sequence == "AAA"
+    check result.quality == "III"
+  
+  # Example with empty sequence
+  block:
+    var r = FQRecord()
+    r.sequence = ""
+    r.quality  = ""
+    let result = filtPolyX(r, minLen = 10)
+    # Should handle empty sequence gracefully
+    check result.sequence == ""
+    check result.quality == ""
+
+test "utils: filtPolyX() minlen":
+  # Basic example with simple poly-A tail
+  block: 
+    var r = FQRecord()
+    r.sequence = "ACGTAAAAAAAAA" # 5 bases + 8 As
+    r.quality  = "IIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Shouldn't trim (poly-A length is 8, minLen is 10)
+    check result.sequence == "ACGTAAAAAAAAA"
+    check result.quality == "IIIIIIIIIIIII"
+
+test "utils: filtPolyX() only tail!":
+  # Basic example with simple poly-A tail
+  block: 
+    var r = FQRecord()
+    r.sequence = "AAAAAAAAAAAAA" # 5 bases + 8 As
+    r.quality  = "IIIIIIIIIIIII"
+    let result = filtPolyX(r, minLen = 10)
+    # Shouldn't trim (poly-A length is 8, minLen is 10)
+    check result.sequence == ""
+    check result.quality == ""
