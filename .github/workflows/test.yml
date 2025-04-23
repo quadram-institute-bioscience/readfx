@@ -5,15 +5,38 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  release:
+    types: [published]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  test-linux:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
         nim-version: ['1.6.x', 'stable']
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Nim
+      uses: jiro4989/setup-nim-action@v1
+      with:
+        nim-version: ${{ matrix.nim-version }}
+        
+    - name: Install Dependencies
+      run: nimble install -y
+      
+    - name: Run Tests
+      run: nimble test
 
+    - name: Run Tests with ARC
+      run: nimble test --gc:arc -y
+      
+  test-macos:
+    if: github.event_name == 'release'
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        nim-version: ['stable']
     steps:
     - uses: actions/checkout@v3
     
