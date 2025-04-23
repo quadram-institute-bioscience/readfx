@@ -187,6 +187,15 @@ Args:
 Returns:
   New FQRecord with extracted subsequence
 
+## composition*
+
+```nim
+proc composition*(record: FQRecord): SeqComp =
+```
+
+Calculate composition of a DNA Sequence
+Returns a SeqComp object with counts of A, C, G, T, N, and Other (int) and GC content (float)
+
 ## gcContent*
 
 ```nim
@@ -200,6 +209,14 @@ Args:
 
 Returns:
   GC content as a fraction between 0.0 and 1.0
+
+## gcContent*
+
+```nim
+proc gcContent*(record: FQRecord): float =
+```
+
+Calculate GC content of a FQRecord (using its sequence)
 
 ## maskLowQuality*
 
