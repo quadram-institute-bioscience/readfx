@@ -3,6 +3,9 @@ import algorithm
 import strutils
 import readfx/seqtypes
 export seqtypes
+
+import readfx/sequtils
+export sequtils
 # https://forum.nim-lang.org/t/2668
 from os import splitPath
 const kseqh = currentSourcePath().splitPath.head & "/readfx/kseq.h"
@@ -93,141 +96,7 @@ proc `$`*(rec: FQRecord): string =
 proc `$`*(rec: FQRecordPtr): string =
   return fqfmt($rec.name, $rec.comment, $rec.sequence, $rec.quality)
 
-# Utility functions for FQRecord
 
-proc reverseComplement*(sequence: string): string =
-  ## Reverse complement a DNA sequence
-  ## 
-  ## Example:
-  ##   let rc = reverseComplement("ATGC")  # returns "GCAT"
-  result = newString(sequence.len)
-  for i in 0 ..< sequence.len:
-    let c = sequence[sequence.len - 1 - i]
-    result[i] = case c
-      of 'A', 'a': 'T'
-      of 'T', 't': 'A'
-      of 'G', 'g': 'C'
-      of 'C', 'c': 'G'
-      of 'N', 'n': 'N'
-      else: c
-
-proc trimQuality*(quality: string, minQual: int, offset: int = 33): string =
-  ## Trim a quality string based on minimum quality threshold
-  ## 
-  ## Args:
-  ##   quality: Quality string
-  ##   minQual: Minimum quality value (0-40)
-  ##   offset: Quality score offset (33 for Sanger/Illumina 1.8+)
-  ## 
-  ## Returns:
-  ##   Trimmed quality string
-  var endPos = quality.high
-  while endPos >= 0 and (ord(quality[endPos]) - offset) < minQual:
-    dec endPos
-  
-  if endPos < 0:
-    return ""
-  
-  return quality[0..endPos]
-
-proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33) =
-  ## Trim a record based on quality scores
-  ## 
-  ## Args:
-  ##   record: FQRecord to modify
-  ##   minQual: Minimum quality value
-  ##   offset: Quality score offset (33 for Sanger/Illumina 1.8+)
-  if record.quality.len == 0:
-    return # FASTA has no quality, nothing to do
-  
-  let newQuality = trimQuality(record.quality, minQual, offset)
-  let newLen = newQuality.len
-  
-  record.quality = newQuality
-  if newLen < record.sequence.len:
-    record.sequence = record.sequence[0 ..< newLen]
-
-proc reverseComplementRecord*(record: var FQRecord) =
-  ## Reverse complement a sequence record in place
-  ## 
-  ## Args:
-  ##   record: FQRecord to modify
-  record.sequence = reverseComplement(record.sequence)
-  if record.quality.len > 0:
-    # For FASTQ records, also reverse the quality string
-    var reversed = ""
-    for i in countdown(record.quality.high, 0):
-      reversed.add(record.quality[i])
-    record.quality = reversed
-
-proc reverseComplementRecord*(record: FQRecord): FQRecord =
-  ## Create a new record with reverse-complemented sequence
-  ## 
-  ## Args:
-  ##   record: Input FQRecord
-  ## 
-  ## Returns:
-  ##   New FQRecord with reverse-complemented sequence
-  result = record
-  reverseComplementRecord(result)
-
-proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord =
-  ## Extract a subsequence from a record
-  ## 
-  ## Args:
-  ##   record: Input FQRecord
-  ##   start: Start position (0-based)
-  ##   length: Length of subsequence to extract (-1 for end of sequence)
-  ## 
-  ## Returns:
-  ##   New FQRecord with extracted subsequence
-  result = record
-  let actualLength = if length < 0: record.sequence.len - start else: length
-  let endPos = min(start + actualLength, record.sequence.len)
-  
-  if start >= record.sequence.len or actualLength <= 0:
-    result.sequence = ""
-    result.quality = ""
-    return result
-    
-  result.sequence = record.sequence[start ..< endPos]
-  if record.quality.len > 0:
-    result.quality = record.quality[start ..< endPos]
-
-proc gcContent*(sequence: string): float =
-  ## Calculate GC content of a DNA sequence
-  ## 
-  ## Args:
-  ##   sequence: DNA sequence
-  ## 
-  ## Returns:
-  ##   GC content as a fraction between 0.0 and 1.0
-  if sequence.len == 0:
-    return 0.0
-    
-  var gcCount = 0
-  for c in sequence:
-    if c in {'G', 'g', 'C', 'c'}:
-      inc gcCount
-      
-  return gcCount / sequence.len
-
-proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N') =
-  ## Mask sequence positions with low quality scores
-  ## 
-  ## Args:
-  ##   record: FQRecord to modify
-  ##   minQual: Minimum quality value
-  ##   offset: Quality score offset
-  ##   maskChar: Character to use for masking
-  if record.quality.len == 0 or record.quality.len != record.sequence.len:
-    return # FASTA has no quality, or invalid record
-    
-  for i in 0 ..< record.quality.len:
-    if ord(record.quality[i]) - offset < minQual:
-      record.sequence[i] = maskChar
-
-#====
 
 
 #################
