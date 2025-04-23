@@ -1,4 +1,64 @@
-# Simulation results
+# ReadFX Data Structures
+
+## FQRecord and FQRecordPtr Types
+
+ReadFX provides two primary data structures for working with FASTA/FASTQ sequence records:
+
+### FQRecord
+
+`FQRecord` is a Nim object that stores sequence data with full string copies. It provides a convenient and safe way to work with sequence records in memory.
+
+```nim
+type
+  FQRecord* = object
+    name*: string        # Sequence identifier (required)
+    comment*: string     # Optional sequence description/comment
+    sequence*: string    # The actual nucleotide sequence
+    quality*: string     # Quality scores (optional, present in FASTQ files)
+    status*, lastChar*: int  # Internal state for parsing
+```
+
+- **Usage**: Ideal for most processing tasks where data needs to be manipulated or stored.
+- **Benefits**: Safe, easy to use, fully manages its own memory.
+- **Memory**: Allocates new strings for all fields.
+
+### FQRecordPtr
+
+`FQRecordPtr` is a lightweight structure that uses pointers to character data. It's designed for high-performance streaming applications where memory efficiency is critical.
+
+```nim
+type
+  FQRecordPtr* = object
+    name*: ptr char      # Pointer to sequence identifier
+    comment*: ptr char   # Pointer to optional description/comment
+    sequence*: ptr char  # Pointer to nucleotide sequence
+    quality*: ptr char   # Pointer to quality scores (optional)
+```
+
+- **Usage**: Best for high-throughput parsing and streaming applications.
+- **Benefits**: Very memory efficient, no allocation overhead during parsing.
+- **Caution**: Pointers are only valid during iteration. The data is owned by the parser and will be overwritten or freed when reading the next record.
+
+### Choosing Between Types
+
+- Use `FQRecord` when you need to store or manipulate records.
+- Use `FQRecordPtr` when parsing millions of records for streaming applications where performance is critical.
+
+### Example
+
+```nim
+# Reading with FQRecord (safe, copies data)
+for record in readFQ("sample.fastq"):
+  echo record.name
+  echo record.sequence.len
+
+# Reading with FQRecordPtr (fast, uses pointers)
+for record in readFQPtr("sample.fastq"):
+  echo $record.name
+  echo $record.sequence
+```
+
+## Performance Benchmarks and Optimization Results
 
 > See benchmark/data_structure.nim
 
@@ -163,4 +223,3 @@ Memory comparison through GC stats...
 ========================================
 Benchmarking completed.
 ```
-

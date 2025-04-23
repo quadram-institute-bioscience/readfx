@@ -1,41 +1,7 @@
 # ReadFX Methods
 
-This document provides a detailed overview of available methods in the ReadFX library for parsing and manipulating FASTA/FASTQ files.
+> This page is incomplete and a placeholder for the methods reference. It will be updated with more details and examples.
 
-## Core Types
-
-### FQRecord
-
-Represents a FASTA/FASTQ record with string-based fields.
-
-```nim
-type FQRecord* = object
-  name*: string      # Sequence identifier
-  comment*: string   # Optional comment
-  sequence*: string  # Nucleotide sequence
-  quality*: string   # Optional quality scores (for FASTQ)
-  status*, lastChar*: int # Internal state variables for parsing
-```
-
-### FQRecordPtr
-
-Pointer-based representation for efficient parsing.
-
-```nim
-type FQRecordPtr* = object
-  name*: ptr char     # Pointer to sequence identifier
-  comment*: ptr char  # Pointer to optional comment
-  sequence*: ptr char # Pointer to nucleotide sequence
-  quality*: ptr char  # Pointer to optional quality scores
-```
-
-### Bufio[T]
-
-Generic buffered I/O utility for low-level file reading operations.
-
-```nim
-type Bufio[T] = tuple[fp: T, buf: string, st, en, sz: int, EOF: bool]
-```
 
 ## Parsing Methods
 
