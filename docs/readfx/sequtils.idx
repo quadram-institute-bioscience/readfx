@@ -1,0 +1,21 @@
+nimTitle	sequtils	readfx/sequtils.html	module readfx/sequtils		0
+nim	trimStart	readfx/sequtils.html#trimStart,FQRecord,int	proc trimStart(record: FQRecord; bases: int): FQRecord		5
+nim	trimEnd	readfx/sequtils.html#trimEnd,FQRecord,int	proc trimEnd(record: FQRecord; bases: int): FQRecord		28
+nim	qualCharToInt	readfx/sequtils.html#qualCharToInt,char,int	proc qualCharToInt(c: char; offset: int = 33): int		53
+nim	qualIntToChar	readfx/sequtils.html#qualIntToChar,int,int	proc qualIntToChar(q: int; offset: int = 33): char		64
+nim	avgQuality	readfx/sequtils.html#avgQuality,FQRecord,int	proc avgQuality(record: FQRecord; offset: int = 33): float		75
+nim	avgQuality	readfx/sequtils.html#avgQuality,string,int	proc avgQuality(quality: string; offset: int = 33): float		93
+nim	filtPolyX	readfx/sequtils.html#filtPolyX,FQRecord,int,bool	proc filtPolyX(read: FQRecord; minLen: int = 10; trackStats: bool = false): FQRecord		112
+nim	trimQuality	readfx/sequtils.html#trimQuality,string,int,int	proc trimQuality(quality: string; minQual: int; offset: int = 33): string		249
+nim	qualityTrim	readfx/sequtils.html#qualityTrim,FQRecord,int,int	proc qualityTrim(record: var FQRecord; minQual: int; offset: int = 33)		268
+nim	revCompl	readfx/sequtils.html#revCompl,string	proc revCompl(sequence: string): string		285
+nim	revCompl	readfx/sequtils.html#revCompl,FQRecord	proc revCompl(record: var FQRecord)		295
+nim	revCompl	readfx/sequtils.html#revCompl,FQRecord_2	proc revCompl(record: FQRecord): FQRecord		308
+nim	subSequence	readfx/sequtils.html#subSequence,FQRecord,int,int	proc subSequence(record: FQRecord; start: int; length: int = -1): FQRecord		319
+nim	composition	readfx/sequtils.html#composition,FQRecord	proc composition(record: FQRecord): SeqComp		342
+nim	gcContent	readfx/sequtils.html#gcContent,string	proc gcContent(sequence: string): float		359
+nim	gcContent	readfx/sequtils.html#gcContent,FQRecord	proc gcContent(record: FQRecord): float		377
+nim	maskLowQuality	readfx/sequtils.html#maskLowQuality,FQRecord,int,int,char	proc maskLowQuality(record: var FQRecord; minQual: int; offset: int = 33;\n               maskChar: char = 'N')		381
+nimgrp	gccontent	readfx/sequtils.html#gcContent-procs-all	proc		359
+nimgrp	avgquality	readfx/sequtils.html#avgQuality-procs-all	proc		75
+nimgrp	revcompl	readfx/sequtils.html#revCompl-procs-all	proc		285

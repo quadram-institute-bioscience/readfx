@@ -1,0 +1,7 @@
+nimTitle	seqtypes	readfx/seqtypes.html	module readfx/seqtypes		0
+nim	FQRecordPtr	readfx/seqtypes.html#FQRecordPtr	object FQRecordPtr		32
+nim	FQRecord	readfx/seqtypes.html#FQRecord	object FQRecord		69
+nim	SeqComp	readfx/seqtypes.html#SeqComp	object SeqComp		105
+heading	FQRecordPtr	readfx/seqtypes.html#fqrecordptr	 FQRecordPtr		0
+heading	FQRecord	readfx/seqtypes.html#fqrecord	 FQRecord		0
+heading	SeqComp	readfx/seqtypes.html#seqcomp	 SeqComp		0
