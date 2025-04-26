@@ -47,7 +47,8 @@
       </select>
     </div>
     <ul class="simple simple-toc" id="toc-list">
-  <li>
+  <li><a class="reference" id="seqfu-common-methods_toc" href="#seqfu-common-methods">SeqFu common methods</a></li>
+<li>
   <a class="reference reference-toplevel" href="#6" id="56">Imports</a>
 </li>
 <li>
@@ -126,7 +127,9 @@
 
     <div id="tocRoot"></div>
     
-    <p class="module-desc"></p>
+    <p class="module-desc">
+<h1><a class="toc-backref" id="seqfu-common-methods" href="#seqfu-common-methods">SeqFu common methods</a></h1><p>This module provides common methods for manipulating and analyzing sequence data in FASTA/FASTQ format. It includes functions for trimming, quality scoring, reverse complementing, and calculating GC content. </p>
+</p>
     <div class="section" id="6">
   <h1><a class="toc-backref" href="#6">Imports</a></h1>
   <dl class="item">
@@ -146,8 +149,8 @@
 <p>Args: quality: Quality string offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)</p>
 <p>Returns: Average quality score as a float</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L93" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L93" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L99" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L99" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -160,8 +163,8 @@
 <p>Args: record: FQRecord to analyze offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)</p>
 <p>Returns: Average quality score as a float</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L75" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L75" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L81" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L81" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -173,8 +176,8 @@
   <dd>
     
     Calculate composition of a DNA Sequence Returns a SeqComp object with counts of A, C, G, T, N, and Other (int) and GC content (float)
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L342" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L342" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L348" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L348" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -190,8 +193,8 @@
 <p>Parameters: read: The input sequence read minLen: Minimum length of homopolymer run to trigger trimming (default: 10) trackStats: Whether to track statistics about trimming (not implemented in this version)</p>
 <p>Returns: A new FQRecord with poly-X tails trimmed if needed</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L112" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L112" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L118" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L118" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -203,8 +206,8 @@
   <dd>
     
     Calculate GC content of a FQRecord (using its sequence)
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L377" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L377" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L383" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L383" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -216,8 +219,8 @@
 <p>Args: sequence: DNA sequence</p>
 <p>Returns: GC content as a fraction between 0.0 and 1.0</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L359" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L359" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L365" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L365" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -232,8 +235,8 @@
     <p>Mask sequence positions with low quality scores</p>
 <p>Args: record: FQRecord to modify minQual: Minimum quality value offset: Quality score offset maskChar: Character to use for masking</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L381" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L381" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L387" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L387" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -249,8 +252,8 @@
 <p>Args: c: Quality character offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)</p>
 <p>Returns: Integer value of the quality character</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L53" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L53" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L59" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L59" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -266,8 +269,8 @@
 <p>Args: q: Integer quality value offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)</p>
 <p>Returns: Character representation of the quality value</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L64" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L64" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L70" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L70" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -282,8 +285,8 @@
     <p>Trim a record based on quality scores</p>
 <p>Args: record: FQRecord to modify minQual: Minimum quality value offset: Quality score offset (33 for Sanger/Illumina 1.8+)</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L268" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L268" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L274" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L274" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -298,8 +301,8 @@
 <p>Args: record: Input FQRecord</p>
 <p>Returns: New FQRecord with reverse-complemented sequence</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L308" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L308" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L314" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L314" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -310,8 +313,8 @@
     <p>Reverse complement a sequence record in place</p>
 <p>Args: record: FQRecord to modify</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L295" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L295" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L301" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L301" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -323,8 +326,8 @@
 <p>Args: sequence: DNA sequence</p>
 <p>Returns: Reverse-complemented sequence</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L285" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L285" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L291" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L291" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -340,8 +343,8 @@
 <p>Args: record: Input FQRecord start: Start position (0-based) length: Length of subsequence to extract (-1 for end of sequence)</p>
 <p>Returns: New FQRecord with extracted subsequence</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L319" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L319" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L325" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L325" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -357,8 +360,8 @@
 <p>Args: record: Input FQRecord bases: Number of bases to remove from the end</p>
 <p>Returns: New FQRecord with trimmed sequence and quality</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L28" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L28" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L34" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L34" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -374,8 +377,8 @@
 <p>Args: quality: Quality string minQual: Minimum quality value (0-40) offset: Quality score offset (33 for Sanger/Illumina 1.8+)</p>
 <p>Returns: Trimmed quality string</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L249" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L249" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L255" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L255" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -391,8 +394,8 @@
 <p>Args: record: Input FQRecord bases: Number of bases to remove from the start</p>
 <p>Returns: New FQRecord with trimmed sequence and quality</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L5" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L5" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L11" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L11" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -408,7 +411,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2025-04-26 12:46:40 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2025-04-26 13:02:15 UTC</small>
       </div>
     </div>
   </div>

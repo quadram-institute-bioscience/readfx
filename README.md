@@ -1,5 +1,7 @@
 # ReadFX - Nim FASTQ/FASTA Parser
 
+[![Nim Tests](https://github.com/quadram-institute-bioscience/readfx/actions/workflows/test.yml/badge.svg)](https://github.com/quadram-institute-bioscience/readfx/actions/workflows/test.yml)
+
 The Nim FASTA/FASTQ parsing library for [SeqFu](https://github.com/telatin/seqfu2).
 
 
