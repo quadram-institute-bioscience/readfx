@@ -1,3 +1,27 @@
+## ReadFX: A Nim library for bioinformatics sequence file parsing
+## ===============================================================
+##
+## This module provides efficient parsing and manipulation of FASTA/FASTQ format
+## sequence files commonly used in bioinformatics.
+##
+## Features:
+## * Fast FASTA/FASTQ sequence parsing (supports gzipped files)
+## * Buffered I/O for efficient file reading
+## * Interval tree implementation for genomic interval operations
+##
+## Example:
+##
+## ```nim
+## import readfx
+## 
+## # Read a FASTQ file
+## for record in readFQ("sample.fastq.gz"):
+##   echo "Sequence name: ", record.name
+##   echo "Sequence: ", record.sequence
+##   echo "Quality: ", record.quality
+##
+## ```
+## 
 import zip/zlib
 import algorithm
 import strutils
@@ -40,7 +64,24 @@ proc kseq_rewind*(seq: ptr kseq_t) {.header: kseqh, importc: "kseq_rewind".}
 
 proc kseq_read*(seq: ptr kseq_t): int {.header: kseqh, importc: "kseq_read".}
 
-
+## Iterator for reading FASTQ files, returning pointers to record data
+##
+## Note: The pointers are reused between iterations, so don't store them.
+## For stdin input, use "-" as the path parameter.
+##
+## Args:
+##   path: Path to the FASTQ file (supports gzipped files)
+##
+## Returns:
+##   An iterator yielding FQRecordPtr objects
+##
+## Example:
+##
+## ```nim
+## for rec in readFQPtr("sample.fastq.gz"):
+##   echo $rec.name
+##   echo $rec.sequence
+## ```
 iterator readFQPtr*(path: string): FQRecordPtr =
   # - ptr char will be reused on next iteration
   # - for stdin use "-" as path
@@ -64,7 +105,24 @@ iterator readFQPtr*(path: string): FQRecordPtr =
     yield result
   discard gzclose(fp)
 
-
+## Iterator for reading FASTQ files, returning copies of record data
+##
+## This iterator creates copies of the strings, unlike readFQPtr which
+## returns pointers to the underlying data.
+##
+## Args:
+##   path: Path to the FASTQ file (supports gzipped files)
+##
+## Returns:
+##   An iterator yielding FQRecord objects with copied data
+##
+## Example:
+##
+## ```nim
+## for rec in readFQ("sample.fastq.gz"):
+##   echo rec.name
+##   echo rec.sequence
+## ```
 iterator readFQ*(path: string): FQRecord =
   var result: FQRecord# 'result' not implicit in iterators
   for rec in readFQPtr(path):
@@ -74,7 +132,16 @@ iterator readFQ*(path: string): FQRecord =
     result.quality = $rec.quality
     yield result
 
-
+## Formats a sequence record as a FASTA or FASTQ string
+##
+## Args:
+##   name: Sequence name/identifier
+##   comment: Sequence comment (optional)
+##   sequence: The sequence string
+##   quality: Quality scores (empty for FASTA format)
+##
+## Returns:
+##   Formatted FASTA/FASTQ string
 proc fqfmt(name: string, comment: string, sequence: string, quality: string): string =
   var fastq = false
   var header = ">"
@@ -90,20 +157,26 @@ proc fqfmt(name: string, comment: string, sequence: string, quality: string): st
   if fastq:
     result = result & "\n+\n" & quality
 
-
+# Convert a FQRecord to a string (FASTA or FASTQ format)
+##
+## Returns:
+##   Formatted FASTA/FASTQ string
 proc `$`*(rec: FQRecord): string =
   return fqfmt(rec.name, rec.comment, rec.sequence, rec.quality)
 
-
+## Convert a FQRecordPtr to a string (FASTA or FASTQ format)
+##
+## Returns:
+##   Formatted FASTA/FASTQ string
 proc `$`*(rec: FQRecordPtr): string =
   return fqfmt($rec.name, $rec.comment, $rec.sequence, $rec.quality)
 
 
 
 
-#################
+# -----------------------
 # gzip file I/O #
-#################
+# -----------------------
 
 when defined(windows):
   const libz = "zlib1.dll"
@@ -152,9 +225,9 @@ proc read(f: var GzFile, buf: var string, sz: int, offset: int = 0):
   result = gzread(f, buf[offset].addr, buf.len)
   buf.setLen(result)
 
-###################
+# -----------------------
 # Buffered reader #
-###################
+# -----------------------
 
 type
   Bufio*[T] = tuple[fp: T, buf: string, st, en, sz: int, EOF: bool]
@@ -262,9 +335,9 @@ proc readLine*[T](f: var Bufio[T], buf: var string): bool {.discardable.} =
   var ret = readUntil(f, buf, dret)
   return if ret >= 0: true else: false
 
-################
+# -----------------------
 # Fastx Reader #
-################
+# -----------------------
 
 
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
@@ -301,9 +374,9 @@ proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
   if r.sequence.len != r.quality.len: r.status = -4; return false
   return true
 
-#############
+# -----------------------
 # Intervals #
-#############
+# -----------------------
 
 type
   Interval*[S,T] = tuple[st, en: S, data: T, max: S]
