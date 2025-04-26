@@ -1,4 +1,10 @@
-# Utility functions for FQRecord
+## SeqFu common methods
+## ==========================================================
+## This module provides common methods for manipulating
+## and analyzing sequence data in FASTA/FASTQ format.
+## It includes functions for trimming, quality scoring,
+## reverse complementing, and calculating GC content.
+##
 import seqtypes
 import std/strutils
 
