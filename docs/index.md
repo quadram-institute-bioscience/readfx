@@ -47,6 +47,9 @@ while f.readFastx(r):
 
 ## Documentation
 
+- [**API Documentation**](theindex.html)
+
+## Notes
 - [Methods](METHODS.md) - Detailed documentation of all available methods
   - [Utils methods](UTILS.md) - Utility methods for manipulating sequence records
 - [Data Structure](DATA_STRUCTURE.md) - Overview of internal data structures
