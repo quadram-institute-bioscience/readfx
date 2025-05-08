@@ -39,15 +39,15 @@ const kseqh = currentSourcePath().splitPath.head & "/readfx/kseq.h"
 
 
 type
-  kstring_t = object
-    ll: int
+  kstring_t {.importc, header: kseqh.} = object
+    l: int  # Use the C definition as is
     m: int
     s: ptr char
-  kstream_t = object
+  kstream_t {.importc, header: kseqh.} = object
     begin: int
     endd: int
     is_eof: int
-  kseq_t = object
+  kseq_t {.importc, header: kseqh.} = object
     name: kstring_t
     comment: kstring_t
     seq: kstring_t

@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.2.0"
+version       = "0.2.1"
 author        = "Andreas Wilm and SeqFu team"
 description   = "Parse FASTQ and FASTA files, using Heng Li's Klib"
 license       = "MIT"
@@ -9,9 +9,13 @@ requires "nim >= 1.0", "zip >= 0.2.1"
 
 skipDirs = @["tests"]
 
+# Build the library?
+
 task test, "run the tests":
   exec "nim c -r tests/tester"
 
+# DOCUMENTATION
+# ============================================================================
 # Get Nim version by executing a nim command
 proc getNimVersionStr(): string =
   # Run nim -v and get the first line
