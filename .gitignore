@@ -8,3 +8,4 @@ benchmark/M_abscessus_HiSeq.fq.gz
 benchmark/biofast-data-v1.tar.gz
 .vscode/
 nimclipboard/.DS_Store
+.DS_Store
