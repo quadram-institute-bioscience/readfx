@@ -1,18 +1,35 @@
 import unittest
 import md5
+import os
 import strutils
 
 import ../readfx
 
+proc checkRecord(r: FQRecord, quality = false): bool =
+  var ok = true
+  if r.name == "":
+    ok = false
+  if r.sequence == "":
+    ok = false
+  if quality and r.quality == "":
+    ok = false
+  
+test "input files":
+  # Check if the test files exist
+  check fileExists("./tests/fastq_demo.fq")
+  check fileExists("./tests/seq.txt")
+  check fileExists("./tests/SRR396637_1.seqs1-2.fastq.gz")
+  check fileExists("./tests/test.fasta.gz")
+  check fileExists("./tests/fasta_demo.fa")
 
-test "readfq test.fasta.gz":
+test "(1) readfq test.fasta.gz":
   var res = ""
   for rec in readfq("./tests/test.fasta.gz"):
     res = res & $rec & "\n"
   check $toMD5($res) == "21aa45c3b9110a7df328680f8b8753e8"#  gzip -dc tests/test.fasta.gz | md5sum
 
 
-test "readfq seq.txt":
+test "(1) readfq seq.txt":
   # tests mixed fa and fastq and messy input
   var i = 0
   for rec in readfq("./tests/seq.txt"):
@@ -26,14 +43,14 @@ test "readfq seq.txt":
       check len(rec.quality) == len(rec.sequence)
 
 
-test "readfq SRR396637_1.seqs1-2.fastq.gz":
+test "(1) readfq SRR396637_1.seqs1-2.fastq.gz":
   var res = ""
   for rec in readfq("./tests/SRR396637_1.seqs1-2.fastq.gz"):
     res = res & $rec & "\n"
   check $toMD5($res) == "299882b15a2dc87f496a88173dd485ad"#  gzip -dc SRR396637_1.seqs1-2.fastq.gz | md5sum
 
 
-test "readFQPtr test.fasta.gz":
+test "(2) readFQPtr test.fasta.gz":
   var res = ""
   var recs: seq[string]
   for rec in readFQPtr("./tests/test.fasta.gz"):
@@ -43,7 +60,7 @@ test "readFQPtr test.fasta.gz":
   check $toMD5($res) == "21aa45c3b9110a7df328680f8b8753e8"#  gzip -dc tests/test.fasta.gz | md5sum
 
 
-test "readFastx test.fasta.gz":
+test "(3) readFastx test.fasta.gz":
   var res = ""
   var r: FQRecord
   var f = xopen[GzFile]("./tests/test.fasta.gz")
@@ -79,6 +96,54 @@ test "readFastx SRR396637_1.seqs1-2.fastq.gz":
     res = res & $r & "\n"
   check $toMD5($res) == "299882b15a2dc87f496a88173dd485ad"#  gzip -dc SRR396637_1.seqs1-2.fastq.gz | md5sum
 
+
+test "FQRecord: Fasta: readfq()":
+  for rec in readfq("./tests/fasta_demo.fa"):
+    check len(rec.name) > 0
+    check len(rec.sequence) > 0
+    check len(rec.comment) > 0
+
+test "FQRecord: Fasta: readfqptr()":
+  for rec in readfqptr("./tests/fasta_demo.fa"):
+    check len(rec.name) > 0
+    check len(rec.sequence) > 0
+    check len(rec.comment) > 0
+
+test "FQRecord: Fasta: readfx()":
+  var rec: FQRecord
+  var f = xopen[GzFile]("./tests/fasta_demo.fa")
+  defer: f.close()
+  while f.readFastx(rec):
+    check len(rec.name) > 0
+    check len(rec.sequence) > 0
+    check len(rec.comment) > 0
+    break
+
+#===
+test "FQRecord: FASTQ: readfq()":
+  for rec in readfq("./tests/fastq_demo.fq"):
+    check len(rec.name) > 0
+    check len(rec.sequence) > 0
+    check len(rec.comment) > 0
+    check len(rec.quality) == len(rec.sequence)
+
+test "FQRecord: FASTQ: readfqptr()":
+  for rec in readfqptr("./tests/fastq_demo.fq"):
+    check len(rec.name) > 0
+    check len(rec.sequence) > 0
+    check len(rec.comment) > 0
+    check len(rec.quality) == len(rec.sequence)
+
+test "FQRecord: FASTQ: readfx()":
+  var rec: FQRecord
+  var f = xopen[GzFile]("./tests/fastq_demo.fq")
+  defer: f.close()
+  while f.readFastx(rec):
+    check len(rec.name) > 0
+    check len(rec.sequence) > 0
+    check len(rec.comment) > 0
+    check len(rec.quality) == len(rec.sequence)
+    break
 test "utils: revCompl()":
   var r = FQRecord()
   r.sequence = "GAAA"
