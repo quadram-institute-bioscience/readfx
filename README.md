@@ -4,6 +4,35 @@
 
 The Nim FASTA/FASTQ parsing library for [SeqFu](https://github.com/telatin/seqfu2).
 
+* [API Documentation](https://quadram-institute-bioscience.github.io/readfx/readfx.html)
+
+
+## Installation
+
+```bash
+nimble install readfx
+```
+
+## Usage
+
+```nim
+import readfx
+
+# Using the C wrapper (klib)
+for record in readFQ("example.fastq"):
+  echo record.name, ": ", record.sequence.len
+  
+# Using pointer-based version (more efficient, reuses memory)
+for record in readFQPtr("example.fastq.gz"):
+  echo $record.name, ": ", $record.sequence.len
+  
+# Using the native Nim implementation
+var r: FQRecord
+var f = xopen[GzFile]("example.fastq.gz")
+defer: f.close()
+while f.readFastx(r):
+  echo r.name, ": ", r.sequence.len
+```
 
 ## Authors
 
