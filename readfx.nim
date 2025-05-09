@@ -124,12 +124,13 @@ iterator readFQPtr*(path: string): FQRecordPtr =
 ##   echo rec.sequence
 ## ```
 iterator readFQ*(path: string): FQRecord =
-  var result: FQRecord# 'result' not implicit in iterators
+  var result: FQRecord  # 'result' not implicit in iterators
   for rec in readFQPtr(path):
-    result.name = $rec.name
-    result.comment = $rec.comment
-    result.sequence = $rec.sequence
-    result.quality = $rec.quality
+    # Explicitly convert ptr char to string with proper nil checks
+    result.name = if rec.name.isNil: "" else: $cast[cstring](rec.name)
+    result.comment = if rec.comment.isNil: "" else: $cast[cstring](rec.comment)
+    result.sequence = if rec.sequence.isNil: "" else: $cast[cstring](rec.sequence)
+    result.quality = if rec.quality.isNil: "" else: $cast[cstring](rec.quality)
     yield result
 
 ## Formats a sequence record as a FASTA or FASTQ string
@@ -169,8 +170,13 @@ proc `$`*(rec: FQRecord): string =
 ## Returns:
 ##   Formatted FASTA/FASTQ string
 proc `$`*(rec: FQRecordPtr): string =
-  return fqfmt($rec.name, $rec.comment, $rec.sequence, $rec.quality)
-
+  # Explicitly convert ptr char to string first
+  let nameStr = if rec.name.isNil: "" else: $cast[cstring](rec.name)
+  let commentStr = if rec.comment.isNil: "" else: $cast[cstring](rec.comment)
+  let sequenceStr = if rec.sequence.isNil: "" else: $cast[cstring](rec.sequence)
+  let qualityStr = if rec.quality.isNil: "" else: $cast[cstring](rec.quality)
+  
+  return fqfmt(nameStr, commentStr, sequenceStr, qualityStr)
 
 
 
