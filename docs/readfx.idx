@@ -1,25 +1,26 @@
 nimTitle	readfx	readfx.html	module readfx		0
-nim	kseq_init	readfx.html#kseq_init,gzFile	proc kseq_init(fp: gzFile): ptr kseq_t		59
-nim	kseq_rewind	readfx.html#kseq_rewind,ptr.kseq_t	proc kseq_rewind(seq: ptr kseq_t)		62
-nim	kseq_read	readfx.html#kseq_read,ptr.kseq_t	proc kseq_read(seq: ptr kseq_t): int		65
-nim	readFQPtr	readfx.html#readFQPtr.i,string	iterator readFQPtr(path: string): FQRecordPtr		85
-nim	readFQ	readfx.html#readFQ.i,string	iterator readFQ(path: string): FQRecord		126
-nim	`$`	readfx.html#$,FQRecord	proc `$`(rec: FQRecord): string		165
-nim	`$`	readfx.html#$,FQRecordPtr	proc `$`(rec: FQRecordPtr): string		172
-nim	GzFile	readfx.html#GzFile	type GzFile		197
-nim	Bufio	readfx.html#Bufio	tuple Bufio		239
-nim	open	readfx.html#open,Bufio[T],string,FileMode,int	proc open[T](f: var Bufio[T]; fn: string; mode: FileMode = fmRead;\n        sz: int = 0x00010000): int		241
-nim	xopen	readfx.html#xopen,string,FileMode,int	proc xopen[T](fn: string; mode: FileMode = fmRead; sz: int = 0x00010000): Bufio[T]		248
-nim	close	readfx.html#close,Bufio[T]	proc close[T](f: var Bufio[T]): int		254
-nim	eof	readfx.html#eof,Bufio[T]	proc eof[T](f: Bufio[T]): bool		257
-nim	readByte	readfx.html#readByte,Bufio[T]	proc readByte[T](f: var Bufio[T]): int		260
-nim	read	readfx.html#read,Bufio[T],string,int,int	proc read[T](f: var Bufio[T]; buf: var string; sz: int; offset: int = 0): int		269
-nim	readUntil	readfx.html#readUntil,Bufio[T],string,char,int,int	proc readUntil[T](f: var Bufio[T]; buf: var string; dret: var char; delim: int = -1;\n             offset: int = 0): int		293
-nim	readLine	readfx.html#readLine,Bufio[T],string	proc readLine[T](f: var Bufio[T]; buf: var string): bool		339
-nim	readFastx	readfx.html#readFastx,Bufio[T],FQRecord	proc readFastx[T](f: var Bufio[T]; r: var FQRecord): bool		349
-nim	Interval	readfx.html#Interval	tuple Interval		388
-nim	sort	readfx.html#sort,seq[Interval[S,T]]	proc sort[S, T](a: var seq[Interval[S, T]])		390
-nim	index	readfx.html#index,seq[Interval[S,T]]	proc index[S, T](a: var seq[Interval[S, T]]): int		396
-nim	overlap	readfx.html#overlap.i,seq[Interval[S,T]],S,S	iterator overlap[S, T](a: seq[Interval[S, T]]; st: S; en: S): Interval[S, T]		426
-nimgrp	$	readfx.html#$-procs-all	proc		165
+nim	kseq_init	readfx.html#kseq_init,gzFile	proc kseq_init(fp: gzFile): ptr kseq_t		62
+nim	kseq_rewind	readfx.html#kseq_rewind,ptr.kseq_t	proc kseq_rewind(seq: ptr kseq_t)		65
+nim	kseq_read	readfx.html#kseq_read,ptr.kseq_t	proc kseq_read(seq: ptr kseq_t): int		68
+nim	readFQPtr	readfx.html#readFQPtr.i,string	iterator readFQPtr(path: string): FQRecordPtr		88
+nim	readFQ	readfx.html#readFQ.i,string	iterator readFQ(path: string): FQRecord		129
+nim	fafmt	readfx.html#fafmt,FQRecord,int	proc fafmt(rec: FQRecord; width: int = 60): string		181
+nim	`$`	readfx.html#$,FQRecord	proc `$`(rec: FQRecord): string		188
+nim	`$`	readfx.html#$,FQRecordPtr	proc `$`(rec: FQRecordPtr): string		195
+nim	GzFile	readfx.html#GzFile	type GzFile		220
+nim	Bufio	readfx.html#Bufio	tuple Bufio		262
+nim	open	readfx.html#open,Bufio[T],string,FileMode,int	proc open[T](f: var Bufio[T]; fn: string; mode: FileMode = fmRead;\n        sz: int = 0x00010000): int		264
+nim	xopen	readfx.html#xopen,string,FileMode,int	proc xopen[T](fn: string; mode: FileMode = fmRead; sz: int = 0x00010000): Bufio[T]		271
+nim	close	readfx.html#close,Bufio[T]	proc close[T](f: var Bufio[T]): int		277
+nim	eof	readfx.html#eof,Bufio[T]	proc eof[T](f: Bufio[T]): bool		280
+nim	readByte	readfx.html#readByte,Bufio[T]	proc readByte[T](f: var Bufio[T]): int		283
+nim	read	readfx.html#read,Bufio[T],string,int,int	proc read[T](f: var Bufio[T]; buf: var string; sz: int; offset: int = 0): int		292
+nim	readUntil	readfx.html#readUntil,Bufio[T],string,char,int,int	proc readUntil[T](f: var Bufio[T]; buf: var string; dret: var char; delim: int = -1;\n             offset: int = 0): int		316
+nim	readLine	readfx.html#readLine,Bufio[T],string	proc readLine[T](f: var Bufio[T]; buf: var string): bool		362
+nim	readFastx	readfx.html#readFastx,Bufio[T],FQRecord	proc readFastx[T](f: var Bufio[T]; r: var FQRecord): bool		372
+nim	Interval	readfx.html#Interval	tuple Interval		411
+nim	sort	readfx.html#sort,seq[Interval[S,T]]	proc sort[S, T](a: var seq[Interval[S, T]])		413
+nim	index	readfx.html#index,seq[Interval[S,T]]	proc index[S, T](a: var seq[Interval[S, T]]): int		419
+nim	overlap	readfx.html#overlap.i,seq[Interval[S,T]],S,S	iterator overlap[S, T](a: seq[Interval[S, T]]; st: S; en: S): Interval[S, T]		449
+nimgrp	$	readfx.html#$-procs-all	proc		188
 heading	ReadFX: A Nim library for bioinformatics sequence file parsing	readfx.html#readfxcolon-a-nim-library-for-bioinformatics-sequence-file-parsing	 ReadFX: A Nim library for bioinformatics sequence file parsing		0

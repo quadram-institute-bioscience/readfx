@@ -1,0 +1,4 @@
+nimTitle	oligoutils	readfx/oligoutils.html	module readfx/oligoutils		0
+nim	matchIUPAC	readfx/oligoutils.html#matchIUPAC,char,char	proc matchIUPAC(primerBase, referenceBase: char): bool		5
+nim	findOligoMatches	readfx/oligoutils.html#findOligoMatches,string,string,float,int,int	proc findOligoMatches(sequence, primer: string; threshold: float; max_mismatches = 0;\n                 min_matches = 6): seq[int]		67
+nim	findPrimerMatches	readfx/oligoutils.html#findPrimerMatches,string,string,float,int,int	proc findPrimerMatches(sequence, primer: string; threshold: float;\n                  max_mismatches = 0; min_matches = 6): seq[seq[int]]		128
