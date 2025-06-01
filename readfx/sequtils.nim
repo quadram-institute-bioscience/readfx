@@ -236,7 +236,7 @@ proc rc_string(sequence: string): string =
     let c = sequence[sequence.len - 1 - i]
     result[i] = case c
       of 'A', 'a': 'T'
-      of 'T', 't': 'A'
+      of 'U', 'u', 'T', 't': 'A'
       of 'G', 'g': 'C'
       of 'C', 'c': 'G'
       of 'N', 'n': 'N'

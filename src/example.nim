@@ -36,19 +36,25 @@ proc debugMessage*(message: string, indent: bool = false) =
 
 when isMainModule:
   let args = commandLineParams()
-
+  # Check if the number of arguments is less than 1
+  if args.len < 1:
+    stderr.writeLine "Missing input parameter [FILENAME]"
+    quit(1)
 
   var newSeq = FQRecord()
 
   debugMessage "Testing Record"
-  newSeq.name     = "name"
-  newSeq.comment  = "comment"
-  newSeq.sequence = "SEQUENCE"
+  newSeq.name     = "NAME_1"
+  newSeq.comment  = "this is a comment"
+  newSeq.sequence = "CAGATATATATATATATATATATATATATAT"
   
+  echo "Outputting a FASTA record:"
   echo $newSeq
+  echo "--- split by 10 ---"
+  echo fafmt(newSeq, 10)
 
   debugMessage "Testing Record: with quality"
-  newSeq.quality  = "Quality!"
+  newSeq.quality  = "IIIIBIHHHEEEEEEHHHHHHHHHHHA9987"
   echo $newSeq
   if len(args) == 0:
     stderr.writeLine "Missing input parameter [FILENAME]"

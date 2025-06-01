@@ -30,6 +30,9 @@ export seqtypes
 
 import readfx/sequtils
 export sequtils
+
+import readfx/oligoutils
+export oligoutils
 # https://forum.nim-lang.org/t/2668
 from os import splitPath
 const kseqh = currentSourcePath().splitPath.head & "/readfx/kseq.h"
@@ -157,6 +160,26 @@ proc fqfmt(name: string, comment: string, sequence: string, quality: string): st
   result = result & "\n" & sequence
   if fastq:
     result = result & "\n+\n" & quality
+
+## Print FASTA record splitting the sequence into lines of N characters
+## Returns:
+##  Formatted FASTA string
+proc fafmt(name: string, comment: string, sequence: string, width: int = 60): string =
+  var result = ">" & name
+  if comment != "":
+    result = result & " " & comment
+  result = result & "\n"
+  for i in 0 ..< sequence.len:
+    if i > 0 and i mod width == 0:
+      result = result & "\n"
+    result = result & sequence[i]
+  return result
+
+## Print FASTA record splitting the sequence into lines of N characters
+## Returns:
+## Formatted FASTA string
+proc fafmt*(rec: FQRecord, width: int = 60): string =
+  return fafmt(rec.name, rec.comment, rec.sequence, width)
 
 # Convert a FQRecord to a string (FASTA or FASTQ format)
 ##
