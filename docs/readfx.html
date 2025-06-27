@@ -155,6 +155,10 @@
   <li><a class="reference" href="#readFQ.i%2Cstring" title="readFQ(path: string): FQRecord">readFQ(path: string): FQRecord</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">readFQPair
+  <li><a class="reference" href="#readFQPair.i%2Cstring%2Cstring%2Cbool" title="readFQPair(path1: string; path2: string; checkNames: bool = false): FQPair">readFQPair(path1: string; path2: string; checkNames: bool = false): FQPair</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">readFQPtr
   <li><a class="reference" href="#readFQPtr.i%2Cstring" title="readFQPtr(path: string): FQRecordPtr">readFQPtr(path: string): FQRecordPtr</a></li>
 
@@ -208,6 +212,16 @@
 <p><pre class="listing"><span class="Keyword">for</span> <span class="Identifier">rec</span> <span class="Keyword">in</span> <span class="Identifier">readFQ</span><span class="Punctuation">(</span><span class="StringLit">&quot;sample.fastq.gz&quot;</span><span class="Punctuation">)</span><span class="Punctuation">:</span>
   <span class="Identifier">echo</span> <span class="Identifier">rec</span><span class="Operator">.</span><span class="Identifier">name</span>
   <span class="Identifier">echo</span> <span class="Identifier">rec</span><span class="Operator">.</span><span class="Identifier">sequence</span></pre></p>
+<p>Iterator for reading paired-end FASTQ files synchronously</p>
+<p>Reads two FASTQ files in parallel, yielding pairs of corresponding records. The files must have the same number of sequences in the same order.</p>
+<p>Args: path1: Path to the first FASTQ file (R1, forward reads) path2: Path to the second FASTQ file (R2, reverse reads) checkNames: Whether to verify that read names match (default: false)</p>
+<p>Returns: An iterator yielding FQPair objects with synchronized reads</p>
+<p>Raises: IOError: If files cannot be opened or have mismatched lengths ValueError: If checkNames is true and read names don't match</p>
+<p>Example:</p>
+<p><pre class="listing"><span class="Keyword">for</span> <span class="Identifier">pair</span> <span class="Keyword">in</span> <span class="Identifier">readFQPair</span><span class="Punctuation">(</span><span class="StringLit">&quot;sample_R1.fastq.gz&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;sample_R2.fastq.gz&quot;</span><span class="Punctuation">)</span><span class="Punctuation">:</span>
+  <span class="Identifier">echo</span> <span class="StringLit">&quot;Forward: &quot;</span><span class="Punctuation">,</span> <span class="Identifier">pair</span><span class="Operator">.</span><span class="Identifier">read1</span><span class="Operator">.</span><span class="Identifier">name</span>
+  <span class="Identifier">echo</span> <span class="StringLit">&quot;Reverse: &quot;</span><span class="Punctuation">,</span> <span class="Identifier">pair</span><span class="Operator">.</span><span class="Identifier">read2</span><span class="Operator">.</span><span class="Identifier">name</span>
+  <span class="Identifier">processReadPair</span><span class="Punctuation">(</span><span class="Identifier">pair</span><span class="Operator">.</span><span class="Identifier">read1</span><span class="Operator">.</span><span class="Identifier">sequence</span><span class="Punctuation">,</span> <span class="Identifier">pair</span><span class="Operator">.</span><span class="Identifier">read2</span><span class="Operator">.</span><span class="Identifier">sequence</span><span class="Punctuation">)</span></pre></p>
 <p>Formats a sequence record as a FASTA or FASTQ string</p>
 <p>Args: name: Sequence name/identifier comment: Sequence comment (optional) sequence: The sequence string quality: Quality scores (empty for FASTA format)</p>
 <p>Returns: Formatted FASTA/FASTQ string</p>
@@ -228,8 +242,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L262" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L262" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L366" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L366" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -238,8 +252,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L220" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L220" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L324" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L324" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -248,8 +262,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L411" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L411" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L515" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L515" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -265,8 +279,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L188" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L188" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L292" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L292" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -275,8 +289,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L195" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L195" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L299" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L299" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -288,8 +302,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L277" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L277" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L381" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L381" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -301,8 +315,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L280" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L280" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L384" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L384" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -315,8 +329,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L181" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L181" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L285" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L285" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -328,8 +342,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L419" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L419" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L523" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L523" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -387,8 +401,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L264" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L264" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L368" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L368" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -401,8 +415,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L292" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L292" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L396" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L396" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -414,8 +428,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L283" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L283" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L387" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L387" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -427,8 +441,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L372" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L372" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L476" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L476" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -440,8 +454,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L362" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L362" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L466" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L466" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -454,8 +468,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L316" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L316" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L420" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L420" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -467,8 +481,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L413" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L413" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L517" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L517" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -481,8 +495,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L271" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L271" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L375" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L375" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -501,8 +515,8 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L449" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L449" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L553" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L553" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -516,6 +530,20 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
     
     <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L129" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
 <a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L129" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+
+</div>
+<div id="readFQPair-iterators-all">
+  <div id="readFQPair.i,string,string,bool">
+  <dt><pre><span class="Keyword">iterator</span> <a href="#readFQPair.i%2Cstring%2Cstring%2Cbool"><span class="Identifier">readFQPair</span></a><span class="Other">(</span><span class="Identifier">path1</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">path2</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">checkNames</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <a href="readfx/seqtypes.html#FQPair"><span class="Identifier">FQPair</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx.nim#L164" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx.nim#L164" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -541,7 +569,7 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
 <div class="section" id="19">
   <h1><a class="toc-backref" href="#19">Exports</a></h1>
   <dl class="item">
-    <a href="readfx/seqtypes.html#FQRecord"><span class="Identifier">FQRecord</span></a>, <a href="readfx/seqtypes.html#SeqComp"><span class="Identifier">SeqComp</span></a>, <a href="readfx/seqtypes.html#FQRecordPtr"><span class="Identifier">FQRecordPtr</span></a>, <a href="readfx/sequtils.html#revCompl,FQRecord"><span class="Identifier">revCompl</span></a>, <a href="readfx/sequtils.html#composition,FQRecord"><span class="Identifier">composition</span></a>, <a href="readfx/sequtils.html#revCompl,string"><span class="Identifier">revCompl</span></a>, <a href="readfx/sequtils.html#maskLowQuality,FQRecord,int,int,char"><span class="Identifier">maskLowQuality</span></a>, <a href="readfx/sequtils.html#trimEnd,FQRecord,int"><span class="Identifier">trimEnd</span></a>, <a href="readfx/sequtils.html#qualIntToChar,int,int"><span class="Identifier">qualIntToChar</span></a>, <a href="readfx/sequtils.html#avgQuality,FQRecord,int"><span class="Identifier">avgQuality</span></a>, <a href="readfx/sequtils.html#avgQuality,string,int"><span class="Identifier">avgQuality</span></a>, <a href="readfx/sequtils.html#qualityTrim,FQRecord,int,int"><span class="Identifier">qualityTrim</span></a>, <a href="readfx/sequtils.html#revCompl,FQRecord_2"><span class="Identifier">revCompl</span></a>, <a href="readfx/sequtils.html#filtPolyX,FQRecord,int,bool"><span class="Identifier">filtPolyX</span></a>, <a href="readfx/sequtils.html#subSequence,FQRecord,int,int"><span class="Identifier">subSequence</span></a>, <a href="readfx/sequtils.html#gcContent,string"><span class="Identifier">gcContent</span></a>, <a href="readfx/sequtils.html#gcContent,FQRecord"><span class="Identifier">gcContent</span></a>, <a href="readfx/sequtils.html#trimStart,FQRecord,int"><span class="Identifier">trimStart</span></a>, <a href="readfx/sequtils.html#trimQuality,string,int,int"><span class="Identifier">trimQuality</span></a>, <a href="readfx/sequtils.html#qualCharToInt,char,int"><span class="Identifier">qualCharToInt</span></a>, <a href="readfx/oligoutils.html#findOligoMatches,string,string,float,int,int"><span class="Identifier">findOligoMatches</span></a>, <a href="readfx/oligoutils.html#findPrimerMatches,string,string,float,int,int"><span class="Identifier">findPrimerMatches</span></a>, <a href="readfx/oligoutils.html#matchIUPAC,char,char"><span class="Identifier">matchIUPAC</span></a>
+    <a href="readfx/seqtypes.html#FQRecord"><span class="Identifier">FQRecord</span></a>, <a href="readfx/seqtypes.html#FQPair"><span class="Identifier">FQPair</span></a>, <a href="readfx/seqtypes.html#SeqComp"><span class="Identifier">SeqComp</span></a>, <a href="readfx/seqtypes.html#FQRecordPtr"><span class="Identifier">FQRecordPtr</span></a>, <a href="readfx/sequtils.html#revCompl,FQRecord"><span class="Identifier">revCompl</span></a>, <a href="readfx/sequtils.html#composition,FQRecord"><span class="Identifier">composition</span></a>, <a href="readfx/sequtils.html#revCompl,string"><span class="Identifier">revCompl</span></a>, <a href="readfx/sequtils.html#maskLowQuality,FQRecord,int,int,char"><span class="Identifier">maskLowQuality</span></a>, <a href="readfx/sequtils.html#trimEnd,FQRecord,int"><span class="Identifier">trimEnd</span></a>, <a href="readfx/sequtils.html#qualIntToChar,int,int"><span class="Identifier">qualIntToChar</span></a>, <a href="readfx/sequtils.html#avgQuality,FQRecord,int"><span class="Identifier">avgQuality</span></a>, <a href="readfx/sequtils.html#avgQuality,string,int"><span class="Identifier">avgQuality</span></a>, <a href="readfx/sequtils.html#qualityTrim,FQRecord,int,int"><span class="Identifier">qualityTrim</span></a>, <a href="readfx/sequtils.html#revCompl,FQRecord_2"><span class="Identifier">revCompl</span></a>, <a href="readfx/sequtils.html#filtPolyX,FQRecord,int,bool"><span class="Identifier">filtPolyX</span></a>, <a href="readfx/sequtils.html#subSequence,FQRecord,int,int"><span class="Identifier">subSequence</span></a>, <a href="readfx/sequtils.html#gcContent,string"><span class="Identifier">gcContent</span></a>, <a href="readfx/sequtils.html#gcContent,FQRecord"><span class="Identifier">gcContent</span></a>, <a href="readfx/sequtils.html#trimStart,FQRecord,int"><span class="Identifier">trimStart</span></a>, <a href="readfx/sequtils.html#trimQuality,string,int,int"><span class="Identifier">trimQuality</span></a>, <a href="readfx/sequtils.html#qualCharToInt,char,int"><span class="Identifier">qualCharToInt</span></a>, <a href="readfx/oligoutils.html#findOligoMatches,string,string,float,int,int"><span class="Identifier">findOligoMatches</span></a>, <a href="readfx/oligoutils.html#findPrimerMatches,string,string,float,int,int"><span class="Identifier">findPrimerMatches</span></a>, <a href="readfx/oligoutils.html#matchIUPAC,char,char"><span class="Identifier">matchIUPAC</span></a>
   </dl>
 </div>
 
@@ -551,7 +579,7 @@ Print FASTA record splitting the sequence into lines of N characters Returns: Fo
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2025-06-01 16:22:53 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2025-06-27 13:07:26 UTC</small>
       </div>
     </div>
   </div>
