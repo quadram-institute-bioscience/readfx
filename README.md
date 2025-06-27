@@ -32,6 +32,11 @@ var f = xopen[GzFile]("example.fastq.gz")
 defer: f.close()
 while f.readFastx(r):
   echo r.name, ": ", r.sequence.len
+
+# Reading paired-end FASTQ files
+for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
+  echo "R1: ", pair.read1.name, " (", pair.read1.sequence.len, " bp)"
+  echo "R2: ", pair.read2.name, " (", pair.read2.sequence.len, " bp)"
 ```
 
 ## Authors
