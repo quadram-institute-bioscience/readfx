@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.2.1"
+version       = "0.3.0"
 author        = "Andreas Wilm and SeqFu team"
 description   = "Parse FASTQ and FASTA files, using Heng Li's Klib"
 license       = "MIT"
