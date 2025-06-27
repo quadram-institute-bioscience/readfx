@@ -73,6 +73,28 @@ type
     quality*: string      ## Optional quality scores (empty for FASTA)
     status*, lastChar*: int  ## Status code and internal parsing state
 
+## FQPair
+## ==========================================================
+## **Paired-end sequence record**
+##
+## Contains two FQRecord objects representing the forward and reverse reads
+## from paired-end sequencing. This is commonly used in Illumina sequencing
+## where each DNA fragment is sequenced from both ends.
+##
+## Example:
+##
+## ```nim
+## for pair in readFQPair("sample_1.fastq.gz", "sample_2.fastq.gz"):
+##   echo "Read 1: ", pair.read1.name
+##   echo "Read 2: ", pair.read2.name
+##   assert pair.read1.sequence.len > 0
+##   assert pair.read2.sequence.len > 0
+## ```
+type
+  FQPair* = object
+    read1*: FQRecord      ## Forward read (R1)
+    read2*: FQRecord      ## Reverse read (R2)
+
 ## SeqComp
 ## =========================================================
 ## **Nucleotide composition statistics**

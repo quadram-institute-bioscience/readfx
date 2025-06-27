@@ -136,6 +136,110 @@ iterator readFQ*(path: string): FQRecord =
     result.quality = if rec.quality.isNil: "" else: $cast[cstring](rec.quality)
     yield result
 
+## Iterator for reading paired-end FASTQ files synchronously
+##
+## Reads two FASTQ files in parallel, yielding pairs of corresponding records.
+## The files must have the same number of sequences in the same order.
+##
+## Args:
+##   path1: Path to the first FASTQ file (R1, forward reads)
+##   path2: Path to the second FASTQ file (R2, reverse reads)
+##   checkNames: Whether to verify that read names match (default: false)
+##
+## Returns:
+##   An iterator yielding FQPair objects with synchronized reads
+##
+## Raises:
+##   IOError: If files cannot be opened or have mismatched lengths
+##   ValueError: If checkNames is true and read names don't match
+##
+## Example:
+##
+## ```nim
+## for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
+##   echo "Forward: ", pair.read1.name
+##   echo "Reverse: ", pair.read2.name
+##   processReadPair(pair.read1.sequence, pair.read2.sequence)
+## ```
+iterator readFQPair*(path1: string, path2: string, checkNames: bool = false): FQPair =
+  var fp1, fp2: GzFile
+  
+  # Open first file
+  if path1 == "-":
+    fp1 = gzdopen(0, "r")
+  else:
+    fp1 = gzopen(path1, "r")
+  if fp1 == nil:
+    raise newException(IOError, "Cannot open file: " & path1)
+  
+  # Open second file  
+  if path2 == "-":
+    raise newException(IOError, "Cannot use stdin for both paired files")
+  else:
+    fp2 = gzopen(path2, "r")
+  if fp2 == nil:
+    discard gzclose(fp1)
+    raise newException(IOError, "Cannot open file: " & path2)
+  
+  let rec1 = kseq_init(fp1)
+  let rec2 = kseq_init(fp2)
+  var pair: FQPair
+  var count = 0
+  
+  try:
+    while true:
+      let ret1 = kseq_read(rec1)
+      let ret2 = kseq_read(rec2)
+      
+      # Check if both files ended simultaneously
+      if ret1 < 0 and ret2 < 0:
+        break
+      
+      # Check for premature end of either file
+      if ret1 < 0:
+        raise newException(IOError, "File " & path1 & " ended prematurely after " & $count & " sequences")
+      if ret2 < 0:
+        raise newException(IOError, "File " & path2 & " ended prematurely after " & $count & " sequences")
+      
+      count += 1
+      
+      # Convert records to FQRecord format
+      pair.read1.name = if rec1.name.s.isNil: "" else: $cast[cstring](rec1.name.s)
+      pair.read1.comment = if rec1.comment.s.isNil: "" else: $cast[cstring](rec1.comment.s)
+      pair.read1.sequence = if rec1.seq.s.isNil: "" else: $cast[cstring](rec1.seq.s)
+      pair.read1.quality = if rec1.qual.s.isNil: "" else: $cast[cstring](rec1.qual.s)
+      
+      pair.read2.name = if rec2.name.s.isNil: "" else: $cast[cstring](rec2.name.s)
+      pair.read2.comment = if rec2.comment.s.isNil: "" else: $cast[cstring](rec2.comment.s)
+      pair.read2.sequence = if rec2.seq.s.isNil: "" else: $cast[cstring](rec2.seq.s)
+      pair.read2.quality = if rec2.qual.s.isNil: "" else: $cast[cstring](rec2.qual.s)
+      
+      # Optional name checking
+      if checkNames:
+        var name1 = pair.read1.name
+        var name2 = pair.read2.name
+        
+        # Remove common suffixes like /1, /2, or trailing spaces
+        if name1.endsWith("/1"):
+          name1 = name1[0..^3]
+        elif name1.endsWith(" 1"):
+          name1 = name1[0..^3]
+        
+        if name2.endsWith("/2"):
+          name2 = name2[0..^3]
+        elif name2.endsWith(" 2"):
+          name2 = name2[0..^3]
+        
+        if name1 != name2:
+          raise newException(ValueError, "Sequence name mismatch at record " & $count & ": '" & 
+                           pair.read1.name & "' != '" & pair.read2.name & "'")
+      
+      yield pair
+      
+  finally:
+    discard gzclose(fp1)
+    discard gzclose(fp2)
+
 ## Formats a sequence record as a FASTA or FASTQ string
 ##
 ## Args:
