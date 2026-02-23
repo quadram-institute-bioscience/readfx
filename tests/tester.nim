@@ -144,6 +144,17 @@ test "FQRecord: FASTQ: readfx()":
     check len(rec.comment) > 0
     check len(rec.quality) == len(rec.sequence)
     break
+test "readFastx: reuse FQRecord across two FASTA files":
+  var r: FQRecord
+  var f1 = xopen[GzFile]("./tests/test.fasta.gz")
+  while f1.readFastx(r): discard  # exhausts f1, leaves lastChar stale without fix
+  f1.close()
+  var f2 = xopen[GzFile]("./tests/fasta_demo.fa")
+  defer: f2.close()
+  if f2.readFastx(r):
+    check not r.name.startsWith(">")
+    check len(r.name) > 0
+
 test "utils: revCompl()":
   var r = FQRecord()
   r.sequence = "GAAA"

@@ -484,7 +484,7 @@ proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
     r.lastChar = x
   r.sequence.setLen(0); r.quality.setLen(0); r.comment.setLen(0)
   x = f.readUntil(r.name, c, -2)
-  if x < 0: r.status = x; return false       # EOF or stream error
+  if x < 0: r.status = x; r.lastChar = 0; return false  # EOF or stream error
   if c != '\n': f.readUntil(r.comment, c) # read FASTA/Q comment
   while true:         # read sequence
     x = f.readByte()  # read the first char on a line
