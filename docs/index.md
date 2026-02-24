@@ -3,6 +3,7 @@
 ReadFX is a Nim library for parsing FASTQ/FASTA files with high performance.
 
 [![Nim Tests](https://github.com/quadram-institute-bioscience/readfx/actions/workflows/test.yml/badge.svg)](https://github.com/quadram-institute-bioscience/readfx/actions/workflows/test.yml)
+[![GitHub repo](https://img.shields.io/badge/go_to-GitHub_repository-blue)](https://github.com/quadram-institute-bioscience/readfx/)
 
 ReadFX provides efficient parsing and manipulation of FASTA and FASTQ files (FASTX). It wraps Heng Li's `kseq.h` C library for maximum throughput and also includes a native Nim implementation.
 

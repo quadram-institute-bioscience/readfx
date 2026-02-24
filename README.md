@@ -15,7 +15,7 @@ nimble install readfx
 
 ## Usage
 
-```python
+```nim
 import readfx
 
 # Using the C wrapper (klib)
