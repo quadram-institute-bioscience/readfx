@@ -1,234 +1,127 @@
-# ReadFX Utility Functions
+# ReadFX Utility Functions Reference
 
-This file documents the utility functions available in the ReadFX library.
+All functions are exported from `readfx` via `readfx/sequtils.nim`.
 
-## trimStart*
+---
 
+## Trimming
+
+### `trimStart`
 ```nim
-proc trimStart*(record: FQRecord, bases: int): FQRecord =
+proc trimStart*(record: FQRecord, bases: int): FQRecord
 ```
+Removes `bases` characters from the 5' (start) end. Returns a new record.
 
-Remove N bases from the start (5' end) of a sequence record
-
-Args:
-  record: Input FQRecord
-  bases: Number of bases to remove from the start
-
-Returns:
-  New FQRecord with trimmed sequence and quality
-
-## trimEnd*
-
+### `trimEnd`
 ```nim
-proc trimEnd*(record: FQRecord, bases: int): FQRecord =
+proc trimEnd*(record: FQRecord, bases: int): FQRecord
 ```
+Removes `bases` characters from the 3' (end) end. Returns a new record.
 
-Remove N bases from the end (3' end) of a sequence record
+---
 
-Args:
-  record: Input FQRecord
-  bases: Number of bases to remove from the end
+## Quality Conversion
 
-Returns:
-  New FQRecord with trimmed sequence and quality
-
-## qualCharToInt*
-
+### `qualCharToInt`
 ```nim
-proc qualCharToInt*(c: char, offset: int = 33): int =
+proc qualCharToInt*(c: char, offset: int = 33): int
 ```
+Converts a quality character to its Phred integer value. Default offset 33 = Sanger/Illumina 1.8+.
 
-Convert a quality character to its integer value
-
-Args:
-  c: Quality character
-  offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)
-
-Returns:
-  Integer value of the quality character
-
-## qualIntToChar*
-
+### `qualIntToChar`
 ```nim
-proc qualIntToChar*(q: int, offset: int = 33): char =
+proc qualIntToChar*(q: int, offset: int = 33): char
 ```
+Converts a Phred integer value to its quality character.
 
-Convert an integer quality value to its character representation
+---
 
-Args:
-  q: Integer quality value
-  offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)
+## Quality Statistics
 
-Returns:
-  Character representation of the quality value
-
-## avgQuality*
-
+### `avgQuality` (record overload)
 ```nim
-proc avgQuality*(record: FQRecord, offset: int = 33): float =
+proc avgQuality*(record: FQRecord, offset: int = 33): float
 ```
+Returns the mean Phred quality score for a record.
 
-Calculate the average quality of a sequence record
-
-Args:
-  record: FQRecord to analyze
-  offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)
-
-Returns:
-  Average quality score as a float
-
-## avgQuality*
-
+### `avgQuality` (string overload)
 ```nim
-proc avgQuality*(quality: string, offset: int = 33): float =
+proc avgQuality*(quality: string, offset: int = 33): float
 ```
+Returns the mean Phred quality score for a raw quality string.
 
-Calculate the average quality of a quality string
+---
 
-Args:
-  quality: Quality string
-  offset: Quality score offset (default is 33 for Sanger/Illumina 1.8+)
+## Quality Trimming
 
-Returns:
-  Average quality score as a float
-
-## rc_string
-
+### `trimQuality`
 ```nim
-proc rc_string(sequence: string): string =
+proc trimQuality*(quality: string, minQual: int, offset: int = 33): string
 ```
+Trims trailing bases below `minQual` from a quality string.
 
-Reverse complement a DNA sequence
-
-Example:
-  let rc = reverseComplement("ATGC")  # returns "GCAT"
-
-## trimQuality*
-
+### `qualityTrim`
 ```nim
-proc trimQuality*(quality: string, minQual: int, offset: int = 33): string =
+proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33)
 ```
+Trims both sequence and quality in place.
 
-Trim a quality string based on minimum quality threshold
-
-Args:
-  quality: Quality string
-  minQual: Minimum quality value (0-40)
-  offset: Quality score offset (33 for Sanger/Illumina 1.8+)
-
-Returns:
-  Trimmed quality string
-
-## qualityTrim*
-
+### `maskLowQuality`
 ```nim
-proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33) =
+proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N')
 ```
+Replaces bases whose quality is below `minQual` with `maskChar`.
 
-Trim a record based on quality scores
+---
 
-Args:
-  record: FQRecord to modify
-  minQual: Minimum quality value
-  offset: Quality score offset (33 for Sanger/Illumina 1.8+)
+## Reverse Complement
 
-## revCompl*
-
+### `revCompl` (string)
 ```nim
-proc revCompl*(sequence: string): string =
+proc revCompl*(sequence: string): string
 ```
+Returns the reverse complement of a DNA sequence string.
 
-Reverse complement a DNA sequence
-
-Args:
-  sequence: DNA sequence
-
-Returns:
-  Reverse-complemented sequence
-
-## revCompl*
-
+### `revCompl` (in-place)
 ```nim
-proc revCompl*(record: var FQRecord) =
+proc revCompl*(record: var FQRecord)
 ```
+Reverse complements a record in place. Also reverses the quality string.
 
-Reverse complement a sequence record in place
-
-Args:
-  record: FQRecord to modify
-
-## revCompl*
-
+### `revCompl` (copy)
 ```nim
-proc revCompl*(record: FQRecord): FQRecord =
+proc revCompl*(record: FQRecord): FQRecord
 ```
+Returns a new record with a reverse-complemented sequence.
 
-Create a new record with reverse-complemented sequence
+---
 
-Args:
-  record: Input FQRecord
+## Subsequence
 
-Returns:
-  New FQRecord with reverse-complemented sequence
-
-## subSequence*
-
+### `subSequence`
 ```nim
-proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord =
+proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord
 ```
+Extracts a subsequence from position `start` (0-based) for `length` bases. `length = -1` means to the end of the sequence.
 
-Extract a subsequence from a record
+---
 
-Args:
-  record: Input FQRecord
-  start: Start position (0-based)
-  length: Length of subsequence to extract (-1 for end of sequence)
+## Composition
 
-Returns:
-  New FQRecord with extracted subsequence
-
-## composition*
-
+### `composition`
 ```nim
-proc composition*(record: FQRecord): SeqComp =
+proc composition*(record: FQRecord): SeqComp
 ```
+Returns a `SeqComp` with per-base counts (A, C, G, T, N, Other) and GC fraction.
 
-Calculate composition of a DNA Sequence
-Returns a SeqComp object with counts of A, C, G, T, N, and Other (int) and GC content (float)
-
-## gcContent*
-
+### `gcContent` (string)
 ```nim
-proc gcContent*(sequence: string): float =
+proc gcContent*(sequence: string): float
 ```
+Returns GC fraction (0.0–1.0) for a sequence string.
 
-Calculate GC content of a DNA sequence
-
-Args:
-  sequence: DNA sequence
-
-Returns:
-  GC content as a fraction between 0.0 and 1.0
-
-## gcContent*
-
+### `gcContent` (record)
 ```nim
-proc gcContent*(record: FQRecord): float =
+proc gcContent*(record: FQRecord): float
 ```
-
-Calculate GC content of a FQRecord (using its sequence)
-
-## maskLowQuality*
-
-```nim
-proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N') =
-```
-
-Mask sequence positions with low quality scores
-
-Args:
-  record: FQRecord to modify
-  minQual: Minimum quality value
-  offset: Quality score offset
-  maskChar: Character to use for masking
-
+Returns GC fraction for a record's sequence.

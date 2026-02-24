@@ -1,128 +1,169 @@
 # FQRecord Utility Functions
 
-The ReadFX library includes a utility module for manipulating FASTA/FASTQ records. This document covers how to use these utilities in your projects.
+Utility functions for manipulating FASTA/FASTQ records are exported automatically when you `import readfx`.
 
-## Importing the Utilities
+## DNA Sequence Operations
 
-The utility functions are automatically exported when you import the main ReadFX module:
+### `revCompl`
 
 ```nim
-import readfx
-# Now you have access to all fqrecordUtils functions
+proc revCompl*(sequence: string): string
+proc revCompl*(record: var FQRecord)        # in-place; also reverses quality
+proc revCompl*(record: FQRecord): FQRecord  # returns new record
 ```
 
-## Available Functions
+Reverse complements a DNA sequence.
 
-### DNA Sequence Operations
+```nim
+let rc = revCompl("ATGC")  # "GCAT"
 
-- **`reverseComplement(sequence: string): string`**  
-  Returns the reverse complement of a DNA sequence.
+var rec: FQRecord
+# ... populate rec ...
+revCompl(rec)               # modify in place
+let rcRec = revCompl(rec)   # get a new copy
+```
 
-  ```nim
-  let rc = reverseComplement("ATGC")  # Returns "GCAT"
-  ```
+### `gcContent`
 
-- **`reverseComplementRecord(record: var FQRecord)`**  
-  Reverse complements a sequence record in place.
+```nim
+proc gcContent*(sequence: string): float
+proc gcContent*(record: FQRecord): float
+```
 
-  ```nim
-  var record = readFQ("example.fastq").next
-  reverseComplementRecord(record)
-  ```
+Returns the GC fraction (0.0–1.0).
 
-- **`reverseComplementRecord(record: FQRecord): FQRecord`**  
-  Creates a new record with reverse-complemented sequence.
+```nim
+let gc = gcContent("ATGC")  # 0.5
+```
 
-  ```nim
-  let record = readFQ("example.fastq").next
-  let rcRecord = reverseComplementRecord(record)
-  ```
+### `composition`
 
-- **`gcContent(sequence: string): float`**  
-  Calculates GC content as a fraction between 0.0 and 1.0.
+```nim
+proc composition*(record: FQRecord): SeqComp
+```
 
-  ```nim
-  let gc = gcContent("ATGC")  # Returns 0.5
-  ```
+Returns counts of A, C, G, T, N, and Other bases, plus GC fraction.
 
-### Quality-Based Operations
+```nim
+let comp = composition(record)
+echo "GC=", comp.GC, " N=", comp.N
+```
 
-- **`trimQuality(quality: string, minQual: int, offset: int = 33): string`**  
-  Trims a quality string based on minimum quality threshold.
+---
 
-  ```nim
-  let trimmedQuality = trimQuality(record.quality, 20)
-  ```
+## Quality Operations
 
-- **`qualityTrim(record: var FQRecord, minQual: int, offset: int = 33)`**  
-  Trims a record based on quality scores, modifying both sequence and quality.
+### `qualCharToInt` / `qualIntToChar`
 
-  ```nim
-  var record = readFQ("example.fastq").next
-  qualityTrim(record, 20)  # Trim bases with quality < 20
-  ```
+```nim
+proc qualCharToInt*(c: char, offset: int = 33): int
+proc qualIntToChar*(q: int, offset: int = 33): char
+```
 
-- **`maskLowQuality(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N')`**  
-  Masks sequence positions with low quality scores with a specified character.
+Convert between quality characters and Phred integers. Default offset is 33 (Sanger/Illumina 1.8+).
 
-  ```nim
-  var record = readFQ("example.fastq").next
-  maskLowQuality(record, 20)  # Mask bases with quality < 20 as 'N'
-  ```
+### `avgQuality`
 
-### Record Manipulation
+```nim
+proc avgQuality*(record: FQRecord, offset: int = 33): float
+proc avgQuality*(quality: string, offset: int = 33): float
+```
 
-- **`subSequence(record: FQRecord, start: int, length: int = -1): FQRecord`**  
-  Extracts a subsequence from a record, returning a new record.
+Returns the mean Phred quality score.
 
-  ```nim
-  let record = readFQ("example.fastq").next
-  # Extract first 10 bases
-  let firstTenBases = subSequence(record, 0, 10)
-  # Extract from position 10 to the end
-  let fromTenToEnd = subSequence(record, 10)
-  ```
+### `trimQuality`
+
+```nim
+proc trimQuality*(quality: string, minQual: int, offset: int = 33): string
+```
+
+Trims trailing bases below `minQual` from a quality string.
+
+### `qualityTrim`
+
+```nim
+proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33)
+```
+
+Trims both sequence and quality strings in place.
+
+```nim
+qualityTrim(record, 20)  # trim bases with Phred < 20
+```
+
+### `maskLowQuality`
+
+```nim
+proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N')
+```
+
+Replaces low-quality bases with `maskChar` without trimming.
+
+```nim
+maskLowQuality(record, 20)       # replace Q<20 with 'N'
+maskLowQuality(record, 20, maskChar = 'X')
+```
+
+---
+
+## Record Manipulation
+
+### `subSequence`
+
+```nim
+proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord
+```
+
+Returns a new record containing a slice of the sequence (and quality).
+
+```nim
+let first50 = subSequence(record, 0, 50)
+let fromPos10 = subSequence(record, 10)   # to end
+```
+
+### `trimStart` / `trimEnd`
+
+```nim
+proc trimStart*(record: FQRecord, bases: int): FQRecord
+proc trimEnd*(record: FQRecord, bases: int): FQRecord
+```
+
+Remove bases from the 5' or 3' end. Return new records.
+
+```nim
+let trimmed = trimStart(record, 5)   # remove first 5 bases
+```
+
+---
 
 ## Complete Example
-
-Here's a complete example showing how to use these utilities:
 
 ```nim
 import readfx
 import strutils
 
-# Process a FASTQ file
-let inputFile = "example.fastq"
-for record in readFQ(inputFile):
-  echo "Processing record: ", record.name
-  
-  # Get GC content
-  let gc = gcContent(record.sequence) * 100
-  echo "GC content: ", gc.formatFloat(ffDecimal, 2), "%"
-  
-  # Create a reverse complemented version
-  let rcRecord = reverseComplementRecord(record)
-  echo "Original: ", record.sequence
-  echo "Reverse:  ", rcRecord.sequence
-  
-  # Make a modified copy we can change
-  var modifiedRecord = record
-  
-  # Mask low quality bases (Q < 20)
-  maskLowQuality(modifiedRecord, 20)
-  
-  # Trim low quality ends
-  qualityTrim(modifiedRecord, 20)
-  
-  # Extract a subsequence
-  let subseq = subSequence(modifiedRecord, 0, 50)
-  echo "First 50 bases: ", subseq.sequence
+for record in readFQ("example.fastq.gz"):
+  echo "Name: ", record.name
+
+  let comp = composition(record)
+  echo "GC=", (comp.GC * 100).formatFloat(ffDecimal, 1), "%  N=", comp.N
+
+  let avg = avgQuality(record)
+  echo "Mean quality: ", avg.formatFloat(ffDecimal, 1)
+
+  # Create a modified copy
+  var modified = record
+  qualityTrim(modified, 20)
+  maskLowQuality(modified, 15)
+
+  let first50 = subSequence(modified, 0, 50)
+  echo "First 50 bp: ", first50.sequence
+
+  echo revCompl(record.sequence)
 ```
 
-For more examples, see the provided `fqrecordUtils_example.nim` file.
+---
 
-## Implementation Details
+## Implementation
 
-These utilities are defined in the `readfx/fqrecordUtils.nim` file, which is automatically imported and exported by the main `readfx.nim` module.
-
-The utilities are compatible with both the C wrapper and native Nim implementation of ReadFX, as they operate on the unified `FQRecord` type.
+These utilities are defined in `readfx/sequtils.nim` and `readfx/oligoutils.nim`, and are re-exported by the main `readfx.nim` module.

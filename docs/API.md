@@ -1,69 +1,145 @@
-
 ## API Reference
 
-> This page is incomplete and a placeholder for the API reference. It will be updated with more details and examples.
+### Types
 
-### C Wrapper (klib)
+#### `FQRecordPtr`
+Pointer-based record for high-performance streaming. Pointers are valid only during the current iteration.
 
-#### Types
+```nim
+type FQRecordPtr* = object
+  name*: ptr char      # Sequence identifier
+  comment*: ptr char   # Optional comment
+  sequence*: ptr char  # Nucleotide sequence
+  quality*: ptr char   # Quality scores (nil for FASTA)
+```
 
-- `FQRecord*`: Main type for FASTQ/FASTA records with string fields
-  - `name*`: Sequence name/ID (string)
-  - `comment*`: Optional comment (string)
-  - `sequence*`: The sequence (string)
-  - `quality*`: Quality string for FASTQ (string)
-  - `status`, `lastChar`: Internal fields
+#### `FQRecord`
+String-based record. Safe to store and manipulate after iteration.
 
-- `FQRecordPtr*`: Pointer-based version for more efficient memory usage
-  - `name*`: Sequence name/ID (ptr char)
-  - `comment*`: Optional comment (ptr char)
-  - `sequence*`: The sequence (ptr char)
-  - `quality*`: Quality string for FASTQ (ptr char)
+```nim
+type FQRecord* = object
+  name*: string
+  comment*: string
+  sequence*: string
+  quality*: string        # Empty for FASTA records
+  status*, lastChar*: int # Internal parsing state
+```
 
-#### Functions and Iterators
+#### `FQPair`
+Paired-end record containing two `FQRecord` objects.
 
-- `iterator readFQ*(path: string): FQRecord`: 
-  Parses FASTQ/FASTA records from a file, converting to strings
+```nim
+type FQPair* = object
+  read1*: FQRecord   # Forward read (R1)
+  read2*: FQRecord   # Reverse read (R2)
+```
 
-- `iterator readFQPtr*(path: string): FQRecordPtr`: 
-  Memory-efficient version using pointers (faster but requires careful handling)
+#### `SeqComp`
+Nucleotide composition statistics.
 
-- `proc `$`*(rec: FQRecord): string`: 
-  Formats a record as a FASTA/FASTQ string
+```nim
+type SeqComp* = object
+  A*, C*, G*, T*, N*, Other*: int
+  GC*: float   # Fraction of G+C bases
+```
 
-- `proc `$`*(rec: FQRecordPtr): string`: 
-  Formats a pointer-based record as a FASTA/FASTQ string
+#### `Bufio[T]`
+Generic buffered reader. Typically used as `Bufio[GzFile]`.
 
-### Native Nim Implementation (nimklib)
+#### `Interval[S,T]`
+Genomic interval for use with the built-in interval tree.
 
-#### Types
+---
 
-- `FQRecord*`: Record type for FASTQ/FASTA data
-  - `sequence`, `quality`, `name`, `comment`: String fields
-  - `status`, `lastChar`: Internal fields
+### Parsing Iterators
 
-- `Bufio*[T]`: Buffered reader for efficient file reading
-  - Generic over file type to support both regular and gzipped files
+#### `readFQ`
+```nim
+iterator readFQ*(path: string): FQRecord
+```
+Yields `FQRecord` objects with string fields. Use `"-"` for stdin.
 
-#### Functions
+#### `readFQPtr`
+```nim
+iterator readFQPtr*(path: string): FQRecordPtr
+```
+Yields pointer-based records. Faster than `readFQ` but pointers are reused on each iteration.
 
-- `proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool`: 
-  Parses a single FASTQ/FASTA record from a buffer
+#### `readFQPair`
+```nim
+iterator readFQPair*(path1, path2: string, checkNames: bool = false): FQPair
+```
+Yields synchronized paired-end records. Raises `IOError` on length mismatch; raises `ValueError` on name mismatch when `checkNames = true`.
 
-- `proc xopen*[T](fn: string, mode: FileMode = fmRead, sz: int = 0x10000): Bufio[T]`: 
-  Opens a file with buffered reading
+#### `readFastx`
+```nim
+proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool
+```
+Low-level reader. Returns `false` at EOF. Used directly when managing your own file handles.
 
-- `proc close*[T](f: var Bufio[T]): int`: 
-  Closes a buffered file
+---
 
-- `proc eof*[T](f: Bufio[T]): bool`: 
-  Checks if the file has reached EOF
+### File I/O
 
-- `proc readLine*[T](f: var Bufio[T], buf: var string): bool`: 
-  Reads a line from a buffered file
+```nim
+proc xopen*[T](fn: string, mode: FileMode = fmRead, sz: int = 0x10000): Bufio[T]
+proc open*[T](f: var Bufio[T], fn: string, mode: FileMode = fmRead, sz: int = 0x10000): int
+proc close*[T](f: var Bufio[T]): int
+proc eof*[T](f: Bufio[T]): bool
+proc readLine*[T](f: var Bufio[T], buf: var string): bool
+```
 
-### Additional Utilities
+---
 
-- `GzFile*`: Type for handling gzipped files
-- `Interval*[S,T]`: Generic interval type with interval tree operations
-- Various buffer manipulation functions
+### Formatting
+
+```nim
+proc `$`*(rec: FQRecord): string      # FASTA or FASTQ string
+proc `$`*(rec: FQRecordPtr): string   # FASTA or FASTQ string
+proc fafmt*(rec: FQRecord, width: int = 60): string  # Wrapped FASTA
+```
+
+---
+
+### Sequence Utilities
+
+```nim
+proc revCompl*(sequence: string): string          # Reverse complement of a string
+proc revCompl*(record: var FQRecord)              # In-place reverse complement
+proc revCompl*(record: FQRecord): FQRecord        # Returns new reverse-complemented record
+proc gcContent*(sequence: string): float          # GC fraction (0.0–1.0)
+proc gcContent*(record: FQRecord): float
+proc composition*(record: FQRecord): SeqComp      # Full nucleotide composition
+proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord
+proc trimStart*(record: FQRecord, bases: int): FQRecord
+proc trimEnd*(record: FQRecord, bases: int): FQRecord
+```
+
+### Quality Utilities
+
+```nim
+proc qualCharToInt*(c: char, offset: int = 33): int
+proc qualIntToChar*(q: int, offset: int = 33): char
+proc avgQuality*(record: FQRecord, offset: int = 33): float
+proc avgQuality*(quality: string, offset: int = 33): float
+proc trimQuality*(quality: string, minQual: int, offset: int = 33): string
+proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33)
+proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N')
+```
+
+### IUPAC Primer Matching
+
+```nim
+proc matchIUPAC*(primerBase, referenceBase: char): bool
+```
+
+---
+
+### Interval Tree
+
+```nim
+type Interval*[S,T] = tuple[st, en: S, data: T, max: S]
+proc sort*[S,T](a: var seq[Interval[S,T]])
+proc index*[S,T](a: var seq[Interval[S,T]]): int
+iterator overlap*[S,T](a: seq[Interval[S,T]], st, en: S): Interval[S,T]
+```

@@ -1,65 +1,50 @@
-# Utility structure
-
-Suggested file structure for reorganizing the codebase:
+# Repository Structure
 
 ```text
-  readfx/
-  ├── readfx.nim             # Main library file (exports all modules)
-  ├── readfx.nimble          # Package file
-  ├── src/
-  │   ├── types.nim          # Type definitions
-  │   ├── io.nim             # I/O operations (GzFile, Bufio)
-  │   ├── parsers.nim        # Parsing functions (readFastx, readFQPtr, readFQ)
-  │   ├── utils.nim          # Utility functions for FQRecord
-  │   └── intervals.nim      # Interval operations
-  ├── readfx/                # C bindings
-  │   ├── kseq.h
-  │   ├── klib/
-  │   │   ├── README.md
-  │   │   └── kseq.h
-  │   └── bindings.nim       # C bindings for kseq.h
-  └...
+readfx/
+├── readfx.nim          # Main library — imports and re-exports all submodules
+├── readfx.nimble       # Nimble package file
+│
+├── readfx/             # Submodules
+│   ├── seqtypes.nim    # Type definitions: FQRecord, FQRecordPtr, FQPair, SeqComp, Strand
+│   ├── sequtils.nim    # Sequence utilities: revCompl, gcContent, qualityTrim, …
+│   ├── oligoutils.nim  # IUPAC primer matching: matchIUPAC
+│   ├── nimklib.nim     # Native Nim FASTX parser (used by readFastx)
+│   ├── kseq.h          # Heng Li's kseq C library (used by readFQPtr, readFQ, readFQPair)
+│   └── klib/           # klib headers
+│
+├── tests/              # Unit tests (nimble test)
+│   ├── tester.nim
+│   ├── illumina_1.fq.gz  # Example paired-end R1 file
+│   └── illumina_2.fq.gz  # Example paired-end R2 file
+│
+├── benchmark/          # Performance benchmarks
+│   └── benchmark.nim
+│
+├── docs/               # GitHub Pages documentation (this directory)
+│
+└── src/demos/          # Demo programs
 ```
 
-##  Import hierarchy:
+## Module Dependencies
 
-  1. types.nim:
-    - Imports: None (base module)
-    - Contains: All type definitions (FQRecord, FQRecordPtr, etc.)
-  2. io.nim:
-    - Imports: types.nim
-    - Contains: GzFile operations, Bufio implementation
-  3. bindings.nim:
-    - Imports: types.nim
-    - Contains: C bindings to klib/kseq.h, kseq_init, kseq_read, etc.
-  4. parsers.nim:
-    - Imports: types.nim, io.nim, bindings.nim
-    - Contains: readFastx, readFQPtr, readFQ implementations
-  5. utils.nim:
-    - Imports: types.nim
-    - Contains: reverseComplement, gcContent, qualityTrim, etc.
-  6. intervals.nim:
-    - Imports: types.nim
-    - Contains: Interval types and operations
-  7. readfx.nim:
-    - Imports and re-exports: types.nim, io.nim, parsers.nim, utils.nim, intervals.nim
-    - Minimal glue code
-
-  This structure creates a clear dependency direction with no circular references:
-
-```text
-  types.nim <── io.nim
-      ^         ^
-      |         |
-      |         |
-  bindings.nim  |
-      ^         |
-      |         |
-      └── parsers.nim
-           ^
-           |
-  utils.nim├── intervals.nim
-      ^    ^
-      |    |
-      └────┴── readfx.nim (main module)
 ```
+seqtypes.nim            (no dependencies)
+    ↑
+sequtils.nim            (imports seqtypes)
+oligoutils.nim          (imports stdlib only)
+nimklib.nim             (imports seqtypes, zlib)
+    ↑
+readfx.nim              (imports all of the above + kseq.h via FFI)
+```
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `readfx.nim` | Entry point — `import readfx` gives you everything |
+| `readfx/seqtypes.nim` | All type definitions |
+| `readfx/sequtils.nim` | Sequence manipulation utilities |
+| `readfx/oligoutils.nim` | IUPAC primer/barcode matching |
+| `readfx/nimklib.nim` | Native Nim buffered parser (`readFastx`) |
+| `readfx/kseq.h` | C parser used by `readFQ`, `readFQPtr`, `readFQPair` |

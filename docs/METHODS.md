@@ -1,268 +1,291 @@
-# ReadFX Methods
+# ReadFX Methods Reference
 
-> This page is incomplete and a placeholder for the methods reference. It will be updated with more details and examples.
+## Parsing Iterators
 
-
-## Parsing Methods
-
-### readFQ
+### `readFQ`
 
 ```nim
 iterator readFQ*(path: string): FQRecord
 ```
 
-High-level iterator for FASTA/FASTQ parsing.
+High-level iterator yielding `FQRecord` objects with string fields.
 
-- **Parameters**: 
-  - `path: string` - File path (use "-" for stdin)
-- **Returns**: FQRecord objects with string fields
-- **Usage**: For clean, easy-to-use code with string manipulation
+- `path` — file path; use `"-"` for stdin
+- Supports FASTA, FASTQ, and gzipped variants
 
-### readFQPtr
+### `readFQPtr`
 
 ```nim
 iterator readFQPtr*(path: string): FQRecordPtr
 ```
 
-High-performance iterator with pointer-based records.
+High-performance iterator yielding pointer-based records.
 
-- **Parameters**: 
-  - `path: string` - File path (use "-" for stdin)
-- **Returns**: FQRecordPtr objects with C-like pointers
-- **Usage**: For maximum performance and low memory usage
-- **Note**: Pointers are reused on each iteration!
+- `path` — file path; use `"-"` for stdin
+- **Pointers are reused on each iteration** — copy data if you need to retain it
 
-### readFastx
+### `readFQPair`
+
+```nim
+iterator readFQPair*(path1, path2: string, checkNames: bool = false): FQPair
+```
+
+Synchronized paired-end iterator yielding `FQPair` objects.
+
+- `path1` — R1 file; use `"-"` for stdin
+- `path2` — R2 file (stdin not supported for both files)
+- `checkNames` — if `true`, validates that read names match (strips `/1`/`/2` suffixes)
+- Raises `IOError` if files have different lengths
+- Raises `ValueError` on name mismatch when `checkNames = true`
+
+### `readFastx`
 
 ```nim
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool
 ```
 
-Low-level procedure for custom parsing workflows.
+Low-level reader populating `r` from a buffered stream.
 
-- **Parameters**: 
-  - `f: var Bufio[T]` - Buffered input stream
-  - `r: var FQRecord` - Record to populate
-- **Returns**: Boolean indicating success
-- **Usage**: For integration with custom I/O workflows
+- Returns `false` at EOF or on error
+- `r.status` contains the sequence length (>0) or an error code on failure
 
-## File Handling Utilities
+---
 
-### xopen
+## File I/O
+
+### `xopen`
 
 ```nim
 proc xopen*[T](fn: string, mode: FileMode = fmRead, sz: int = 0x10000): Bufio[T]
 ```
 
-Opens a file with buffered I/O.
+Opens a file and returns a `Bufio[T]`. Typically used as `xopen[GzFile](fn)`.
 
-- **Parameters**:
-  - `fn: string` - File path
-  - `mode: FileMode` - File mode (default: fmRead)
-  - `sz: int` - Buffer size (default: 0x10000)
-- **Returns**: Bufio object
-
-### open
+### `open`
 
 ```nim
 proc open*[T](f: var Bufio[T], fn: string, mode: FileMode = fmRead, sz: int = 0x10000): int
 ```
 
-Opens a file for buffered I/O.
+Opens a file into an existing `Bufio[T]`. Returns 0 on success, -1 on failure.
 
-- **Parameters**: Same as xopen
-- **Returns**: Status code (0 for success)
-
-### close
+### `close`
 
 ```nim
 proc close*[T](f: var Bufio[T]): int
 ```
 
-Closes a buffered I/O handle.
+Closes a `Bufio[T]` handle. Returns the underlying close status code.
 
-- **Parameters**:
-  - `f: var Bufio[T]` - File handle to close
-- **Returns**: Status code
-
-## Sequence Manipulation Functions
-
-### reverseComplement
+### `eof`
 
 ```nim
-proc reverseComplement*(sequence: string): string
+proc eof*[T](f: Bufio[T]): bool
 ```
 
-Reverse complements a DNA sequence.
+Returns `true` if the buffer is exhausted and EOF has been reached.
 
-- **Parameters**:
-  - `sequence: string` - Input DNA sequence
-- **Returns**: Reverse complemented sequence
-- **Example**: `reverseComplement("ATGC")` returns "GCAT"
-
-### reverseComplementRecord (in-place)
+### `readLine`
 
 ```nim
-proc reverseComplementRecord*(record: var FQRecord)
+proc readLine*[T](f: var Bufio[T], buf: var string): bool
 ```
 
-Reverse complements a sequence record in place.
+Reads one line from a `Bufio[T]`. Returns `false` at EOF.
 
-- **Parameters**:
-  - `record: var FQRecord` - Record to modify
-- **Note**: Modifies the record in place, also reversing quality if present
+---
 
-### reverseComplementRecord (copy)
+## Formatting
+
+### `$` (string conversion)
 
 ```nim
-proc reverseComplementRecord*(record: FQRecord): FQRecord
+proc `$`*(rec: FQRecord): string
+proc `$`*(rec: FQRecordPtr): string
 ```
 
-Creates a new record with reverse-complemented sequence.
+Formats a record as FASTQ (if quality is present) or FASTA.
 
-- **Parameters**:
-  - `record: FQRecord` - Input record
-- **Returns**: New FQRecord with reverse-complemented sequence
+### `fafmt`
 
-### gcContent
+```nim
+proc fafmt*(rec: FQRecord, width: int = 60): string
+```
+
+Formats a record as wrapped FASTA with lines of `width` characters.
+
+---
+
+## Sequence Operations
+
+### `revCompl`
+
+```nim
+proc revCompl*(sequence: string): string      # Returns new reverse-complemented string
+proc revCompl*(record: var FQRecord)          # In-place (also reverses quality)
+proc revCompl*(record: FQRecord): FQRecord    # Returns new record
+```
+
+Reverse complements a DNA sequence. The in-place variant also reverses the quality string.
+
+### `gcContent`
 
 ```nim
 proc gcContent*(sequence: string): float
+proc gcContent*(record: FQRecord): float
 ```
 
-Calculates GC content of a DNA sequence.
+Returns the GC fraction (0.0–1.0).
 
-- **Parameters**:
-  - `sequence: string` - DNA sequence
-- **Returns**: GC content as a fraction between 0.0 and 1.0
-
-## Quality-Based Operations
-
-### trimQuality
+### `composition`
 
 ```nim
-proc trimQuality*(quality: string, minQual: int, offset: int = 33): string
+proc composition*(record: FQRecord): SeqComp
 ```
 
-Trims a quality string based on minimum quality threshold.
+Returns a `SeqComp` object with per-base counts (A, C, G, T, N, Other) and GC fraction.
 
-- **Parameters**:
-  - `quality: string` - Quality string
-  - `minQual: int` - Minimum quality value (0-40)
-  - `offset: int` - Quality score offset (default: 33)
-- **Returns**: Trimmed quality string
-
-### qualityTrim
-
-```nim
-proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33)
-```
-
-Trims a record based on quality scores.
-
-- **Parameters**:
-  - `record: var FQRecord` - Record to modify
-  - `minQual: int` - Minimum quality value
-  - `offset: int` - Quality score offset (default: 33)
-- **Note**: Modifies both sequence and quality in place
-
-### maskLowQuality
-
-```nim
-proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N')
-```
-
-Masks sequence positions with low quality scores.
-
-- **Parameters**:
-  - `record: var FQRecord` - Record to modify
-  - `minQual: int` - Minimum quality value
-  - `offset: int` - Quality score offset (default: 33)
-  - `maskChar: char` - Character to use for masking (default: 'N')
-
-## Record Manipulation
-
-### subSequence
+### `subSequence`
 
 ```nim
 proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord
 ```
 
-Extracts a subsequence from a record.
+Extracts a subsequence starting at `start` (0-based). `length = -1` means to the end. Returns a new `FQRecord`.
 
-- **Parameters**:
-  - `record: FQRecord` - Input record
-  - `start: int` - Start position (0-based)
-  - `length: int` - Length to extract (-1 for end of sequence)
-- **Returns**: New FQRecord with extracted subsequence
-
-### $ (string representation)
+### `trimStart`
 
 ```nim
-proc `$`*(rec: FQRecord): string
-proc `$`*(rec: FQRecordPtr): string 
+proc trimStart*(record: FQRecord, bases: int): FQRecord
 ```
 
-Converts records to string representation in FASTA/FASTQ format.
+Removes `bases` characters from the 5' end. Returns a new `FQRecord`.
 
-- **Parameters**:
-  - `rec: FQRecord/FQRecordPtr` - Record to convert
-- **Returns**: String in FASTA or FASTQ format based on record content
+### `trimEnd`
 
-## Other Utilities
+```nim
+proc trimEnd*(record: FQRecord, bases: int): FQRecord
+```
 
-### Interval Operations
+Removes `bases` characters from the 3' end. Returns a new `FQRecord`.
+
+---
+
+## Quality Operations
+
+### `qualCharToInt`
+
+```nim
+proc qualCharToInt*(c: char, offset: int = 33): int
+```
+
+Converts a quality character to its integer Phred score.
+
+### `qualIntToChar`
+
+```nim
+proc qualIntToChar*(q: int, offset: int = 33): char
+```
+
+Converts a Phred integer score to its quality character.
+
+### `avgQuality`
+
+```nim
+proc avgQuality*(record: FQRecord, offset: int = 33): float
+proc avgQuality*(quality: string, offset: int = 33): float
+```
+
+Returns the mean Phred quality score.
+
+### `trimQuality`
+
+```nim
+proc trimQuality*(quality: string, minQual: int, offset: int = 33): string
+```
+
+Trims trailing low-quality bases from a quality string.
+
+### `qualityTrim`
+
+```nim
+proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33)
+```
+
+Trims both sequence and quality in place based on a minimum quality threshold.
+
+### `maskLowQuality`
+
+```nim
+proc maskLowQuality*(record: var FQRecord, minQual: int, offset: int = 33, maskChar: char = 'N')
+```
+
+Replaces bases with quality below `minQual` with `maskChar` (default `'N'`).
+
+---
+
+## IUPAC Primer Matching
+
+### `matchIUPAC`
+
+```nim
+proc matchIUPAC*(primerBase, referenceBase: char): bool
+```
+
+Returns `true` if `primerBase` (supporting IUPAC ambiguity codes) matches `referenceBase`.
+
+---
+
+## Interval Tree
 
 ```nim
 type Interval*[S,T] = tuple[st, en: S, data: T, max: S]
+
 proc sort*[S,T](a: var seq[Interval[S,T]])
 proc index*[S,T](a: var seq[Interval[S,T]]): int
-iterator overlap*[S,T](a: seq[Interval[S,T]], st: S, en: S): Interval[S,T]
+iterator overlap*[S,T](a: seq[Interval[S,T]], st, en: S): Interval[S,T]
 ```
 
-Interval tree implementation for genomic intervals.
+Sort and index a sequence of intervals, then query overlapping intervals efficiently.
 
-- **Usage**: For interval overlap queries in genomic data
+---
 
 ## Usage Examples
 
-### Basic Parsing
+### Basic parsing
 
 ```nim
 import readfx
 
-# Using readFQ (string-based)
 for record in readFQ("sample.fastq.gz"):
-  echo record.name, " has length ", record.sequence.len
-  
-# Using readFQPtr (pointer-based)
-for record in readFQPtr("sample.fastq.gz"):
-  echo $record.name, " has length ", len($record.sequence)
+  echo record.name, " (", record.sequence.len, " bp)"
+```
 
-# Using readFastx (low-level)
+### Paired-end reads
+
+```nim
+for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
+  echo pair.read1.name, " / ", pair.read2.name
+```
+
+### Sequence manipulation
+
+```nim
+for record in readFQ("sample.fastq.gz"):
+  let gc = gcContent(record.sequence)
+  let rc = revCompl(record.sequence)
+  let comp = composition(record)
+  echo record.name, " GC=", gc, " A=", comp.A, " N=", comp.N
+```
+
+### Quality trimming
+
+```nim
 var record: FQRecord
 var f = xopen[GzFile]("sample.fastq.gz")
 defer: f.close()
 while f.readFastx(record):
-  echo record.name, " has length ", record.sequence.len
-```
-
-### Record Manipulation
-
-```nim
-# GC content calculation
-let gc = gcContent(record.sequence)
-
-# Reverse complement
-let rcSeq = reverseComplement(record.sequence)
-let rcRecord = reverseComplementRecord(record)
-
-# Quality trimming
-qualityTrim(record, 20)  # Trim bases with quality < 20
-
-# Masking low quality bases
-maskLowQuality(record, 20)  # Mask bases with quality < 20 as 'N'
-
-# Extract subsequence
-let firstTenBases = subSequence(record, 0, 10)
+  qualityTrim(record, 20)      # trim 3' low-quality bases
+  maskLowQuality(record, 15)   # mask remaining low-quality positions
+  echo $record
 ```

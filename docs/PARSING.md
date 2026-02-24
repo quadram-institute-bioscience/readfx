@@ -1,102 +1,78 @@
-# FASTX Parsing Methods in ReadFX
+# FASTX Parsing in ReadFX
 
-ReadFX provides three primary methods for parsing FASTA and FASTQ files, each with different characteristics and use cases:
+ReadFX provides four methods for parsing FASTA and FASTQ files:
 
-1. **readFQ** - String-based high-level iterator
-2. **readFQPtr** - Pointer-based high-performance iterator
-3. **readFastx** - Lower-level reader for custom workflow integration
+1. **`readFQ`** — String-based iterator (convenient, safe)
+2. **`readFQPtr`** — Pointer-based iterator (fastest, requires care)
+3. **`readFastx`** — Low-level buffered reader (most flexible)
+4. **`readFQPair`** — Synchronized paired-end iterator
 
 ## Comparison at a Glance
 
-| Method      | Memory Usage | Speed     | Ease of Use    | Flexibility |
-|-------------|--------------|-----------|----------------|-------------|
-| `readFQ`    | Higher       | Good      | Excellent      | Good        |
-| `readFQPtr` | Low          | Excellent | Moderate       | Good        |
-| `readFastx` | Customizable | Excellent | Requires setup | Excellent   |
+| Method        | Memory   | Speed     | Ease of Use    | Use case                   |
+|---------------|----------|-----------|----------------|----------------------------|
+| `readFQ`      | Higher   | Good      | Excellent      | General use                |
+| `readFQPtr`   | Low      | Excellent | Moderate       | High-throughput streaming  |
+| `readFastx`   | Custom   | Excellent | Requires setup | Custom I/O workflows       |
+| `readFQPair`  | Moderate | Good      | Excellent      | Paired-end reads           |
 
-## readFQ
+---
+
+## `readFQ`
 
 ```nim
 iterator readFQ*(path: string): FQRecord
 ```
 
-`readFQ` is a high-level iterator that returns `FQRecord` objects with string fields.
-
-### How to Use
+Yields `FQRecord` objects with Nim strings. Records are safe to store after the loop.
 
 ```nim
 import readfx
 
 for record in readFQ("sample.fastq.gz"):
-  echo record.name, " has length ", record.sequence.len
-  # Manipulate record.sequence, record.quality, etc. as strings
+  echo record.name, " (", record.sequence.len, " bp)"
 ```
 
-### When to Use
+**When to use**: General-purpose parsing where convenience matters more than raw throughput.
 
-- When you want clean, easy-to-use code
-- When you need to manipulate sequence or quality data
-- When you need to store records for later use
-- When working with other Nim code expecting strings
+---
 
-### Why Use
-
-- Safer and more idiomatic Nim code
-- No memory management concerns
-- Easy string manipulation
-- Records persist after iteration
-
-## readFQPtr
+## `readFQPtr`
 
 ```nim
 iterator readFQPtr*(path: string): FQRecordPtr
 ```
 
-`readFQPtr` is a high-performance iterator that returns `FQRecordPtr` objects with pointer fields for maximum efficiency.
-
-### How to Use
+Yields pointer-based records. The underlying buffer is reused on every iteration — do not store pointers across iterations.
 
 ```nim
 import readfx
 
 for record in readFQPtr("sample.fastq.gz"):
-  echo $record.name, " has length ", $record.sequence.len
-  # Be careful! These pointers are reused on each iteration
+  echo $record.name, " (", len($record.sequence), " bp)"
+  # To keep data, copy to a string:
+  # let name = $record.name
 ```
 
-### When to Use
+**When to use**: Processing very large files where memory allocation overhead matters.
 
-- When processing very large files (millions of records)
-- When memory usage is a concern
-- When maximum performance is required
-- For read-only operations where you don't need to keep records
-
-### Why Use
-
-- Significantly lower memory usage
-- Often 1.5-2x faster than `readFQ`
-- No string allocation for each record
-- Avoids garbage collection overhead
-
-### Important Note
-
-The pointers in `FQRecordPtr` are reused with each iteration! If you need to keep a record after moving to the next iteration, you must copy the data:
+**Important**: Pointers in `FQRecordPtr` are invalidated on the next iteration. If you need to retain data, copy it explicitly:
 
 ```nim
-var savedNames: seq[string]
+var names: seq[string]
 for record in readFQPtr("sample.fastq.gz"):
-  savedNames.add($record.name)  # Make a copy
+  names.add($record.name)
 ```
 
-## readFastx
+---
+
+## `readFastx`
 
 ```nim
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool
 ```
 
-`readFastx` is a lower-level procedure that reads one record at a time from a buffered input stream.
-
-### How to Use
+Low-level reader that processes one record at a time from a `Bufio` stream.
 
 ```nim
 import readfx
@@ -105,35 +81,40 @@ var record: FQRecord
 var f = xopen[GzFile]("sample.fastq.gz")
 defer: f.close()
 while f.readFastx(record):
-  echo record.name, " has length ", record.sequence.len
+  echo record.name, " (", record.sequence.len, " bp)"
 ```
 
-### When to Use
+**When to use**: Custom parsing workflows, interleaving reads with other I/O, or when you need fine-grained control over the parse loop.
 
-- When you need more control over the parsing process
-- To integrate with custom I/O workflows
-- When you want to manage your own file handles
-- For advanced use cases requiring custom buffering
+---
 
-### Why Use
+## `readFQPair`
 
-- Finest control over parsing behavior
-- Integrates with custom file handling
-- Allows for interleaving with other operations
-- Can be more efficient for specialized workflows
+```nim
+iterator readFQPair*(path1, path2: string, checkNames: bool = false): FQPair
+```
 
-## Implementation Details
+Reads two FASTQ files in lockstep, yielding an `FQPair` with `read1` and `read2` for each pair.
 
-- `readFQ` is actually built on top of `readFQPtr`, converting pointers to strings
-- `readFastx` is the native Nim implementation used internally
-- Both implementations support FASTA and FASTQ formats, gzipped files, and reading from stdin
+```nim
+import readfx
 
-## Performance Considerations
+for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
+  echo "R1: ", pair.read1.name
+  echo "R2: ", pair.read2.name
+```
 
-In benchmarks on large files:
+- If one file runs out before the other, an `IOError` is raised.
+- With `checkNames = true`, the iterator strips common suffixes (`/1`, `/2`, ` 1`, ` 2`) and raises `ValueError` if names don't match.
+- Stdin (`"-"`) is supported for `path1` but not for both files simultaneously.
 
-- `readFQPtr` is typically the fastest but requires careful memory management
-- `readFQ` is slightly slower due to string allocations but much safer
-- `readFastx` performance depends on how you implement the surrounding code
+**When to use**: Any paired-end sequencing pipeline (Illumina R1/R2 files).
 
-Choose the method that best balances your needs for performance, safety, and code simplicity.
+---
+
+## Implementation Notes
+
+- `readFQ` is built on top of `readFQPtr` and converts pointers to strings on each yield.
+- `readFQPtr` and `readFQPair` use Heng Li's `kseq.h` C library directly via FFI.
+- `readFastx` is a native Nim implementation in `readfx/nimklib.nim`.
+- All methods support both FASTA and FASTQ formats (auto-detected) and transparent gzip decompression.
