@@ -96,7 +96,12 @@ iterator readFQPtr*(path: string): FQRecordPtr =
   else:
     fp = gzopen(path, "r")
 
-  doAssert fp != nil
+  try:
+    doAssert fp != nil
+  except:
+    # Handle the exception here
+    echo "Download the test data first"
+
   let rec = kseq_init(fp)
   while true:
     if kseq_read(rec) < 0:

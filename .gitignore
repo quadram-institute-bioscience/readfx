@@ -9,3 +9,5 @@ benchmark/biofast-data-v1.tar.gz
 .vscode/
 nimclipboard/.DS_Store
 .DS_Store
+hiseq.fq*
+genome.fa*
