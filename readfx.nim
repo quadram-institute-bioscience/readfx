@@ -25,6 +25,8 @@
 import zip/zlib
 import algorithm
 import strutils
+when defined(posix):
+  import posix
 import readfx/seqtypes
 export seqtypes
 
@@ -67,6 +69,25 @@ proc kseq_rewind*(seq: ptr kseq_t) {.header: kseqh, importc: "kseq_rewind".}
 
 proc kseq_read*(seq: ptr kseq_t): int {.header: kseqh, importc: "kseq_read".}
 
+proc openGzForRead(path: string): GzFile =
+  if path == "-":
+    when defined(posix):
+      let stdinDup = posix.dup(0)
+      if stdinDup < 0:
+        raise newException(IOError, "Cannot duplicate stdin for reading")
+      result = gzdopen(int32(stdinDup), "r")
+      if result == nil:
+        discard posix.close(stdinDup)
+        raise newException(IOError, "Cannot open stdin for reading")
+    else:
+      result = gzdopen(0, "r")
+      if result == nil:
+        raise newException(IOError, "Cannot open stdin for reading")
+  else:
+    result = gzopen(path, "r")
+    if result == nil:
+      raise newException(IOError, "Cannot open file: " & path)
+
 ## Iterator for reading FASTQ files, returning pointers to record data
 ##
 ## Note: The pointers are reused between iterations, so don't store them.
@@ -90,13 +111,7 @@ iterator readFQPtr*(path: string): FQRecordPtr =
   # - for stdin use "-" as path
   # - gz[d]open default even for flat file format
   var result: FQRecordPtr# 'result' not implicit in iterators
-  var fp: GzFile
-  if path == "-":
-    fp = gzdopen(0, "r")
-  else:
-    fp = gzopen(path, "r")
-
-  doAssert fp != nil
+  let fp = openGzForRead(path)
   let rec = kseq_init(fp)
   while true:
     if kseq_read(rec) < 0:
@@ -165,12 +180,7 @@ iterator readFQPair*(path1: string, path2: string, checkNames: bool = false): FQ
   var fp1, fp2: GzFile
   
   # Open first file
-  if path1 == "-":
-    fp1 = gzdopen(0, "r")
-  else:
-    fp1 = gzopen(path1, "r")
-  if fp1 == nil:
-    raise newException(IOError, "Cannot open file: " & path1)
+  fp1 = openGzForRead(path1)
   
   # Open second file  
   if path2 == "-":
