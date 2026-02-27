@@ -414,3 +414,111 @@ test "GC content":
   var sc = composition(r)
   var gc = gcContent(r.sequence)
   check sc.GC == gc
+
+test "fastxWriter plain FASTQ":
+  let outPath = getTempDir() / "readfx_writer_plain.fastq"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFastq,
+    compression = false,
+    destination = fileDestination(outPath),
+    bufferSize = 32
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  w.writeRecord("r1", "ACGT", "IIII")
+  w.writeRecord(FQRecord(name: "r2", comment: "paired", sequence: "TTAA", quality: "####"))
+  w.close()
+
+  var names: seq[string] = @[]
+  var quals: seq[string] = @[]
+  for rec in readFQ(outPath):
+    names.add(rec.name)
+    quals.add(rec.quality)
+
+  check names == @["r1", "r2"]
+  check quals == @["IIII", "####"]
+
+test "fastxWriter gzip FASTQ":
+  let outPath = getTempDir() / "readfx_writer.fastq.gz"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFastq,
+    compression = true,
+    destination = fileDestination(outPath),
+    bufferSize = 32,
+    compressionLevel = 6
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  w.writeRecord("gz1", "AACCGG", "IIIIII")
+  w.close()
+
+  var n = 0
+  for rec in readFQ(outPath):
+    inc n
+    check rec.name == "gz1"
+    check rec.sequence == "AACCGG"
+    check rec.quality == "IIIIII"
+  check n == 1
+
+test "fastxWriter FASTA ignores quality":
+  let outPath = getTempDir() / "readfx_writer.fasta"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFasta,
+    compression = false,
+    destination = fileDestination(outPath),
+    bufferSize = 16,
+    fastaWidth = 3
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  w.writeRecord("fa1", "ACGTAC", "!!!!!!", "comment")
+  w.close()
+
+  var n = 0
+  for rec in readFQ(outPath):
+    inc n
+    check rec.name == "fa1"
+    check rec.comment == "comment"
+    check rec.sequence == "ACGTAC"
+    check rec.quality == ""
+  check n == 1
+
+test "fastxWriter FASTQ validates quality":
+  let outPath = getTempDir() / "readfx_writer_invalid.fastq"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFastq,
+    compression = false,
+    destination = fileDestination(outPath)
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  expect ValueError:
+    w.writeRecord("bad1", "ACGT", "")
