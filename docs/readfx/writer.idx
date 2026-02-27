@@ -1,0 +1,21 @@
+nimTitle	writer	readfx/writer.html	module readfx/writer		0
+nim	DefaultBufferSize	readfx/writer.html#DefaultBufferSize	const DefaultBufferSize		34
+nim	DefaultCompressionLevel	readfx/writer.html#DefaultCompressionLevel	const DefaultCompressionLevel		35
+nim	DefaultFastaWidth	readfx/writer.html#DefaultFastaWidth	const DefaultFastaWidth		36
+nim	fxfFasta	readfx/writer.html#fxfFasta	FastxFormat.fxfFasta		40
+nim	fxfFastq	readfx/writer.html#fxfFastq	FastxFormat.fxfFastq		40
+nim	FastxFormat	readfx/writer.html#FastxFormat	enum FastxFormat		40
+nim	fxdStdout	readfx/writer.html#fxdStdout	FastxDestinationKind.fxdStdout		45
+nim	fxdFile	readfx/writer.html#fxdFile	FastxDestinationKind.fxdFile		45
+nim	FastxDestinationKind	readfx/writer.html#FastxDestinationKind	enum FastxDestinationKind		45
+nim	FastxDestination	readfx/writer.html#FastxDestination	object FastxDestination		50
+nim	FastxWriter	readfx/writer.html#FastxWriter	object FastxWriter		67
+nim	stdoutDestination	readfx/writer.html#stdoutDestination	proc stdoutDestination(): FastxDestination		81
+nim	fileDestination	readfx/writer.html#fileDestination,string	proc fileDestination(path: string): FastxDestination		88
+nim	flush	readfx/writer.html#flush,FastxWriter	proc flush(w: var FastxWriter)		137
+nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,FQRecord	proc writeRecord(w: var FastxWriter; record: FQRecord)		193
+nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,string,string,string,string	proc writeRecord(w: var FastxWriter; name: string; sequence: string;\n            quality: string = ""; comment: string = "")		214
+nim	close	readfx/writer.html#close,FastxWriter	proc close(w: var FastxWriter)		231
+nim	fastxWriter	readfx/writer.html#fastxWriter,FastxFormat,bool,FastxDestination,int,int,int	proc fastxWriter(format: FastxFormat; compression: bool = false;\n            destination: FastxDestination = stdoutDestination();\n            bufferSize: int = DefaultBufferSize;\n            compressionLevel: int = DefaultCompressionLevel;\n            fastaWidth: int = DefaultFastaWidth): FastxWriter		272
+nimgrp	writerecord	readfx/writer.html#writeRecord-procs-all	proc		193
+heading	Fastx writer utilities for buffered FASTA/FASTQ output.	readfx/writer.html#fastx-writer-utilities-for-buffered-fastaslashfastq-outputdot	 Fastx writer utilities for buffered FASTA/FASTQ output.		0

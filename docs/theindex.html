@@ -21,7 +21,7 @@
   <div class="document" id="documentId">
     <div class="container">
       <h1 class="title">Index</h1>
-      Modules: <a href="readfx.html">readfx</a>, <a href="readfx/oligoutils.html">readfx/oligoutils</a>, <a href="readfx/seqtypes.html">readfx/seqtypes</a>, <a href="readfx/sequtils.html">readfx/sequtils</a>.<br/><p /><h2>API symbols</h2>
+      Modules: <a href="readfx.html">readfx</a>, <a href="readfx/oligoutils.html">readfx/oligoutils</a>, <a href="readfx/seqtypes.html">readfx/seqtypes</a>, <a href="readfx/sequtils.html">readfx/sequtils</a>, <a href="readfx/writer.html">readfx/writer</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="%60%24%60" href="#%60%24%60"><span>`$`:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="readfx: proc `$`(rec: FQRecord): string" href="readfx.html#%24%2CFQRecord">readfx: proc `$`(rec: FQRecord): string</a></li>
@@ -41,10 +41,24 @@
 <dt><a name="close" href="#close"><span>close:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="readfx: proc close[T](f: var Bufio[T]): int" href="readfx.html#close%2CBufio%5BT%5D">readfx: proc close[T](f: var Bufio[T]): int</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="writer: proc close(w: var FastxWriter)" href="readfx/writer.html#close%2CFastxWriter">writer: proc close(w: var FastxWriter)</a></li>
           </ul></dd>
 <dt><a name="composition" href="#composition"><span>composition:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="sequtils: proc composition(record: FQRecord): SeqComp" href="readfx/sequtils.html#composition%2CFQRecord">sequtils: proc composition(record: FQRecord): SeqComp</a></li>
+          </ul></dd>
+<dt><a name="DefaultBufferSize" href="#DefaultBufferSize"><span>DefaultBufferSize:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: const DefaultBufferSize" href="readfx/writer.html#DefaultBufferSize">writer: const DefaultBufferSize</a></li>
+          </ul></dd>
+<dt><a name="DefaultCompressionLevel" href="#DefaultCompressionLevel"><span>DefaultCompressionLevel:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: const DefaultCompressionLevel" href="readfx/writer.html#DefaultCompressionLevel">writer: const DefaultCompressionLevel</a></li>
+          </ul></dd>
+<dt><a name="DefaultFastaWidth" href="#DefaultFastaWidth"><span>DefaultFastaWidth:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: const DefaultFastaWidth" href="readfx/writer.html#DefaultFastaWidth">writer: const DefaultFastaWidth</a></li>
           </ul></dd>
 <dt><a name="eof" href="#eof"><span>eof:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -53,6 +67,38 @@
 <dt><a name="fafmt" href="#fafmt"><span>fafmt:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="readfx: proc fafmt(rec: FQRecord; width: int = 60): string" href="readfx.html#fafmt%2CFQRecord%2Cint">readfx: proc fafmt(rec: FQRecord; width: int = 60): string</a></li>
+          </ul></dd>
+<dt><a name="FastxDestination" href="#FastxDestination"><span>FastxDestination:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: object FastxDestination" href="readfx/writer.html#FastxDestination">writer: object FastxDestination</a></li>
+          </ul></dd>
+<dt><a name="FastxDestinationKind" href="#FastxDestinationKind"><span>FastxDestinationKind:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: enum FastxDestinationKind" href="readfx/writer.html#FastxDestinationKind">writer: enum FastxDestinationKind</a></li>
+          </ul></dd>
+<dt><a name="FastxFormat" href="#FastxFormat"><span>FastxFormat:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: enum FastxFormat" href="readfx/writer.html#FastxFormat">writer: enum FastxFormat</a></li>
+          </ul></dd>
+<dt><a name="FastxWriter" href="#FastxWriter"><span>FastxWriter:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: object FastxWriter" href="readfx/writer.html#FastxWriter">writer: object FastxWriter</a></li>
+          </ul></dd>
+<dt><a name="fastxWriter" href="#fastxWriter"><span>fastxWriter:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc fastxWriter(format: FastxFormat; compression: bool = false;
+            destination: FastxDestination = stdoutDestination();
+            bufferSize: int = DefaultBufferSize;
+            compressionLevel: int = DefaultCompressionLevel;
+            fastaWidth: int = DefaultFastaWidth): FastxWriter" href="readfx/writer.html#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint">writer: proc fastxWriter(format: FastxFormat; compression: bool = false;
+            destination: FastxDestination = stdoutDestination();
+            bufferSize: int = DefaultBufferSize;
+            compressionLevel: int = DefaultCompressionLevel;
+            fastaWidth: int = DefaultFastaWidth): FastxWriter</a></li>
+          </ul></dd>
+<dt><a name="fileDestination" href="#fileDestination"><span>fileDestination:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc fileDestination(path: string): FastxDestination" href="readfx/writer.html#fileDestination%2Cstring">writer: proc fileDestination(path: string): FastxDestination</a></li>
           </ul></dd>
 <dt><a name="filtPolyX" href="#filtPolyX"><span>filtPolyX:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -70,6 +116,10 @@
                   max_mismatches = 0; min_matches = 6): seq[seq[int]]" href="readfx/oligoutils.html#findPrimerMatches%2Cstring%2Cstring%2Cfloat%2Cint%2Cint">oligoutils: proc findPrimerMatches(sequence, primer: string; threshold: float;
                   max_mismatches = 0; min_matches = 6): seq[seq[int]]</a></li>
           </ul></dd>
+<dt><a name="flush" href="#flush"><span>flush:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc flush(w: var FastxWriter)" href="readfx/writer.html#flush%2CFastxWriter">writer: proc flush(w: var FastxWriter)</a></li>
+          </ul></dd>
 <dt><a name="Forward" href="#Forward"><span>Forward:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="seqtypes: Strand.Forward" href="readfx/seqtypes.html#Forward">seqtypes: Strand.Forward</a></li>
@@ -85,6 +135,22 @@
 <dt><a name="FQRecordPtr" href="#FQRecordPtr"><span>FQRecordPtr:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="seqtypes: object FQRecordPtr" href="readfx/seqtypes.html#FQRecordPtr">seqtypes: object FQRecordPtr</a></li>
+          </ul></dd>
+<dt><a name="fxdFile" href="#fxdFile"><span>fxdFile:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: FastxDestinationKind.fxdFile" href="readfx/writer.html#fxdFile">writer: FastxDestinationKind.fxdFile</a></li>
+          </ul></dd>
+<dt><a name="fxdStdout" href="#fxdStdout"><span>fxdStdout:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: FastxDestinationKind.fxdStdout" href="readfx/writer.html#fxdStdout">writer: FastxDestinationKind.fxdStdout</a></li>
+          </ul></dd>
+<dt><a name="fxfFasta" href="#fxfFasta"><span>fxfFasta:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: FastxFormat.fxfFasta" href="readfx/writer.html#fxfFasta">writer: FastxFormat.fxfFasta</a></li>
+          </ul></dd>
+<dt><a name="fxfFastq" href="#fxfFastq"><span>fxfFastq:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: FastxFormat.fxfFastq" href="readfx/writer.html#fxfFastq">writer: FastxFormat.fxfFastq</a></li>
           </ul></dd>
 <dt><a name="gcContent" href="#gcContent"><span>gcContent:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -202,6 +268,10 @@
 <li><a class="reference external"
           data-doc-search-tag="readfx: proc sort[S, T](a: var seq[Interval[S, T]])" href="readfx.html#sort%2Cseq%5BInterval%5BS%2CT%5D%5D">readfx: proc sort[S, T](a: var seq[Interval[S, T]])</a></li>
           </ul></dd>
+<dt><a name="stdoutDestination" href="#stdoutDestination"><span>stdoutDestination:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc stdoutDestination(): FastxDestination" href="readfx/writer.html#stdoutDestination">writer: proc stdoutDestination(): FastxDestination</a></li>
+          </ul></dd>
 <dt><a name="Strand" href="#Strand"><span>Strand:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="seqtypes: enum Strand" href="readfx/seqtypes.html#Strand">seqtypes: enum Strand</a></li>
@@ -226,6 +296,14 @@
 <li><a class="reference external"
           data-doc-search-tag="seqtypes: Strand.Unknown" href="readfx/seqtypes.html#Unknown">seqtypes: Strand.Unknown</a></li>
           </ul></dd>
+<dt><a name="writeRecord" href="#writeRecord"><span>writeRecord:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc writeRecord(w: var FastxWriter; record: FQRecord)" href="readfx/writer.html#writeRecord%2CFastxWriter%2CFQRecord">writer: proc writeRecord(w: var FastxWriter; record: FQRecord)</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="writer: proc writeRecord(w: var FastxWriter; name: string; sequence: string;
+            quality: string = &quot;&quot;; comment: string = &quot;&quot;)" href="readfx/writer.html#writeRecord%2CFastxWriter%2Cstring%2Cstring%2Cstring%2Cstring">writer: proc writeRecord(w: var FastxWriter; name: string; sequence: string;
+            quality: string = &quot;&quot;; comment: string = &quot;&quot;)</a></li>
+          </ul></dd>
 <dt><a name="xopen" href="#xopen"><span>xopen:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="readfx: proc xopen[T](fn: string; mode: FileMode = fmRead; sz: int = 0x00010000): Bufio[T]" href="readfx.html#xopen%2Cstring%2CFileMode%2Cint">readfx: proc xopen[T](fn: string; mode: FileMode = fmRead; sz: int = 0x00010000): Bufio[T]</a></li>
@@ -234,7 +312,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 12:54:45 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 17:56:14 UTC</small>
       </div>
     </div>
   </div>
