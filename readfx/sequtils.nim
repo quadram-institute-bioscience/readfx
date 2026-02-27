@@ -327,27 +327,40 @@ proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord =
   ## 
   ## Args:
   ##   record: Input FQRecord
-  ##   start: Start position (0-based)
+  ##   start: Start position.
+  ##     - Non-negative values are 0-based from the start of the sequence
+  ##     - Negative values are counted from the end (-1 is the last base)
   ##   length: Length of subsequence to extract (-1 for end of sequence)
   ## 
   ## Returns:
   ##   New FQRecord with extracted subsequence
   result = record
-  let actualLength = if length < 0: record.sequence.len - start else: length
-  let endPos = min(start + actualLength, record.sequence.len)
+  let effectiveStart = if start >= 0: start else: max(0, record.sequence.len + start)
+  let actualLength = if length < 0: record.sequence.len - effectiveStart else: length
+  let endPos = min(effectiveStart + actualLength, record.sequence.len)
   
-  if start >= record.sequence.len or actualLength <= 0:
+  if effectiveStart >= record.sequence.len or actualLength <= 0:
     result.sequence = ""
     result.quality = ""
     return result
     
-  result.sequence = record.sequence[start ..< endPos]
+  result.sequence = record.sequence[effectiveStart ..< endPos]
   if record.quality.len > 0:
-    result.quality = record.quality[start ..< endPos]
+    result.quality = record.quality[effectiveStart ..< endPos]
 
 proc composition*(record: FQRecord): SeqComp =
-  ## Calculate composition of a DNA Sequence
-  ## Returns a SeqComp object with counts of A, C, G, T, N, and Other (int) and GC content (float)
+  ## Calculate base composition for a sequence record.
+  ##
+  ## Args:
+  ##   record: Input record to analyze
+  ##
+  ## Returns:
+  ##   `SeqComp` with A/C/G/T/N/Other counts and GC fraction.
+  ##
+  ## Notes:
+  ##   GC is calculated over valid A/C/G/T bases only.
+  ##   If a sequence has no valid A/C/G/T bases (for example only `N`/other symbols),
+  ##   `GC` is set to `0.0`.
   
   for c in record.sequence:
     case c:
@@ -358,7 +371,11 @@ proc composition*(record: FQRecord): SeqComp =
       of 'N', 'n': inc result.N
       else: inc result.Other
   
-  result.GC = float(result.G + result.C) / float(record.sequence.len - result.N - result.Other)
+  let validBases = record.sequence.len - result.N - result.Other
+  if validBases > 0:
+    result.GC = float(result.G + result.C) / float(validBases)
+  else:
+    result.GC = 0.0
 
 
 

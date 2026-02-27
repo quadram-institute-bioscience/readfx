@@ -2,6 +2,8 @@ import unittest
 import md5
 import os
 import strutils
+when defined(posix):
+  import posix
 
 import ../readfx
 
@@ -58,6 +60,39 @@ test "(2) readFQPtr test.fasta.gz":
     recs.add($rec)
   res = $recs.join("\n") & "\n"
   check $toMD5($res) == "21aa45c3b9110a7df328680f8b8753e8"#  gzip -dc tests/test.fasta.gz | md5sum
+
+test "(2) readFQPtr missing file raises IOError":
+  expect IOError:
+    for rec in readFQPtr("./tests/nonexistent.fastq.gz"):
+      discard rec
+
+test "(2) readFQPtr '-' keeps stdin open":
+  when defined(posix):
+    var pipeFds: array[2, cint]
+    check posix.pipe(pipeFds) == 0
+    let savedStdin = posix.dup(0)
+    check savedStdin >= 0
+
+    let input = "@r1\nA\n+\nI\n"
+    discard posix.write(pipeFds[1], cast[pointer](input.cstring), input.len)
+    discard posix.close(pipeFds[1])
+    check posix.dup2(pipeFds[0], 0) >= 0
+    discard posix.close(pipeFds[0])
+
+    var count = 0
+    try:
+      for rec in readFQPtr("-"):
+        discard rec
+        inc count
+      check count == 1
+
+      let probe = posix.dup(0)
+      check probe >= 0
+      if probe >= 0:
+        discard posix.close(probe)
+    finally:
+      check posix.dup2(savedStdin, 0) >= 0
+      discard posix.close(savedStdin)
 
 
 test "(3) readFastx test.fasta.gz":
@@ -359,6 +394,17 @@ test "seq content":
   check sc.GC == float(4/14)
   check sc.N == 13
   check sc.Other == 2
+
+  r.sequence = "NNNxxx"
+  r.quality  = "IIIIII"
+  sc = composition(r)
+  check sc.A == 0
+  check sc.C == 0
+  check sc.G == 0
+  check sc.T == 0
+  check sc.N == 3
+  check sc.Other == 3
+  check sc.GC == 0.0
 
 test "GC content":
   var r = FQRecord()

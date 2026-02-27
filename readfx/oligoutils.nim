@@ -84,6 +84,7 @@ proc findOligoMatches*(sequence, primer: string, threshold: float, max_mismatche
   ##   - Negative values: primer overhangs before sequence start
   ##   - Values ≥ sequence.len: primer overhangs past sequence end
   ##   - 0 to sequence.len-1: primer starts within sequence bounds
+  ##   - Empty sequence if `primer` is empty
   ## 
   ## Scoring:
   ## - Match score = (matching_bases) / (primer_length_excluding_gap_padding)
@@ -98,6 +99,9 @@ proc findOligoMatches*(sequence, primer: string, threshold: float, max_mismatche
   ## let positions = findOligoMatches("ATCGATCG", "ATCG", 0.75, 1, 3)
   ## # Returns positions where ATCG matches with ≥75% identity
   ## ```
+  if primer.len == 0:
+    return @[]
+
   let
     dna = ('-'.repeat(len(primer) - 1) & sequence & '-'.repeat(len(primer) - 1)).toUpper()
     primer = primer.toUpper()

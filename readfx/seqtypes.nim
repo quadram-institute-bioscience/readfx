@@ -140,4 +140,12 @@ type
   ## The two strands run in opposite directions (5' to 3' and 3' to 5').
   ##
   ## Example:
-  ##
+  ## ```nim
+  ## let s1 = Forward
+  ## let s2 = Reverse
+  ## let s3 = Unknown
+  ## ```
+  Strand* = enum
+    Forward,  ## Forward strand / plus orientation
+    Reverse,  ## Reverse strand / minus orientation
+    Unknown   ## Strand information is not available

@@ -69,3 +69,7 @@ test "findOligoMatches: exact match degenerate":
 
   check matches2.len == 1
   check matches2[0] == -3
+
+test "findOligoMatches: empty primer returns no matches":
+  let matches = findOligoMatches("ATCG", "", 0.8, max_mismatches=0, min_matches=0)
+  check matches.len == 0
