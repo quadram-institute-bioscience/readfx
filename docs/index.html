@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReadFX — Nim FASTA/FASTQ Library</title>
+  <link rel="stylesheet" href="readfx.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/nim.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand">ReadFX</a>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="tutorial.html">Tutorial</a></li>
+    <li><a href="parsing.html">Parsing</a></li>
+    <li><a href="data-structures.html">Data Structures</a></li>
+    <li><a href="utilities.html">Utilities</a></li>
+    <li class="nav-sep"></li>
+    <li><a href="theindex.html">API Reference ↗</a></li>
+    <li class="nav-ext"><a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-eyebrow">nim library</div>
+  <h1 class="hero-title"><span class="accent">ReadFX</span></h1>
+  <p class="hero-tagline">
+    High-performance FASTA&nbsp;&amp;&nbsp;FASTQ parsing for Nim.
+    Wraps Heng&nbsp;Li's battle-tested <code>kseq.h</code> and
+    adds a native Nim parser, gzip support, paired-end reads,
+    and a rich suite of sequence utilities.
+  </p>
+  <div class="hero-actions">
+    <a href="tutorial.html" class="btn btn-primary">Get Started</a>
+    <a href="theindex.html" class="btn btn-outline">API Reference</a>
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank" class="btn btn-outline">GitHub</a>
+  </div>
+  <div class="hero-install">
+    <span class="prompt">$</span>
+    <span class="cmd">nimble install readfx</span>
+  </div>
+</section>
+
+<!-- ── Features ───────────────────────────────────────────── -->
+<div class="container">
+  <div class="features">
+
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <div class="feature-title">Maximum throughput</div>
+      <div class="feature-desc">
+        Built on Heng Li's <code>kseq.h</code> C library via FFI.
+        The pointer-based <code>readFQPtr</code> iterator reuses a
+        single buffer across records for near-zero allocation overhead.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">🗜️</span>
+      <div class="feature-title">Transparent gzip</div>
+      <div class="feature-desc">
+        Pass <code>.fastq.gz</code> or plain <code>.fastq</code>
+        — the library decompresses on the fly. Stdin is also supported
+        by passing <code>"-"</code> as the filename.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">🔀</span>
+      <div class="feature-title">Paired-end reads</div>
+      <div class="feature-desc">
+        <code>readFQPair</code> reads two FASTQ files in lockstep,
+        yielding an <code>FQPair</code> record for each mate pair.
+        Optional name validation catches mismatched files.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">🧬</span>
+      <div class="feature-title">Sequence utilities</div>
+      <div class="feature-desc">
+        Reverse complement, GC content, nucleotide composition,
+        quality trimming, low-quality masking, and subsequence
+        extraction — all in one import.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">🔬</span>
+      <div class="feature-title">IUPAC primer matching</div>
+      <div class="feature-desc">
+        <code>findPrimerMatches</code> finds primer binding sites
+        using IUPAC ambiguity codes, with configurable mismatch
+        thresholds.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">🎛️</span>
+      <div class="feature-title">Three parsing APIs</div>
+      <div class="feature-desc">
+        Choose the right tradeoff: string-based convenience
+        (<code>readFQ</code>), pointer-speed (<code>readFQPtr</code>),
+        or low-level control (<code>readFastx</code>).
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Quick start ─────────────────────────────────────────── -->
+<div class="container">
+  <div style="margin-bottom: 3rem;">
+    <h2 class="section-title">Quick start</h2>
+    <p class="section-sub">
+      One import gives you everything — parsers, types, and utilities.
+    </p>
+
+    <div style="margin-top: 2rem;">
+      <div class="code-wrap">
+        <span class="code-label">nim</span>
+        <pre><code class="language-nim">import readfx
+
+# --- Iterate over FASTQ records (simplest API) ---
+for record in readFQ("sample.fastq.gz"):
+  echo record.name, " (", record.sequence.len, " bp)"
+
+# --- Quality-trim then report GC content ---
+for record in readFQ("sample.fastq.gz"):
+  var r = record
+  qualityTrim(r, minQual = 20)           # trim 3' bases with Phred < 20
+  echo r.name, "  GC=", gcContent(r)    # GC fraction 0.0–1.0
+
+# --- High-throughput: pointer-based (no string copies) ---
+for record in readFQPtr("sample.fastq.gz"):
+  echo $record.name, ": ", len($record.sequence)
+
+# --- Paired-end reads ---
+for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
+  echo "R1: ", pair.read1.name, "  R2: ", pair.read2.name</code></pre>
+      </div>
+    </div>
+
+    <a href="tutorial.html" class="btn btn-primary" style="margin-top: 0.5rem;">Full tutorial →</a>
+  </div>
+</div>
+
+<!-- ── Parser comparison ───────────────────────────────────── -->
+<div style="background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 3.5rem 0; margin-bottom: 0;">
+  <div class="container">
+    <h2 class="section-title">Choose your parser</h2>
+    <p class="section-sub" style="margin-bottom: 2rem;">
+      Every use case has an ideal API. Pick based on your throughput and convenience needs.
+    </p>
+    <div class="api-cards">
+
+      <div class="api-card">
+        <div class="api-card-name">readFQ</div>
+        <span class="api-card-tag tag-green">Recommended</span>
+        <div class="api-card-desc">
+          Yields <code>FQRecord</code> (Nim strings). Safe to store.
+          Best for most programs.
+        </div>
+      </div>
+
+      <div class="api-card">
+        <div class="api-card-name">readFQPtr</div>
+        <span class="api-card-tag tag-yellow">Fastest</span>
+        <div class="api-card-desc">
+          Yields <code>FQRecordPtr</code> (reused C pointers).
+          Ideal for streaming tens of millions of records.
+        </div>
+      </div>
+
+      <div class="api-card">
+        <div class="api-card-name">readFastx</div>
+        <span class="api-card-tag tag-grape">Low-level</span>
+        <div class="api-card-desc">
+          Native Nim proc. Full control over the parse loop
+          and I/O stream.
+        </div>
+      </div>
+
+      <div class="api-card">
+        <div class="api-card-name">readFQPair</div>
+        <span class="api-card-tag tag-grape">Paired-end</span>
+        <div class="api-card-desc">
+          Reads R1 &amp; R2 in lockstep. Yields <code>FQPair</code>
+          with optional name validation.
+        </div>
+      </div>
+
+    </div>
+    <a href="parsing.html" class="btn btn-outline" style="margin-top: 0.5rem;">Compare parsers in depth →</a>
+  </div>
+</div>
+
+<!-- ── Docs links ──────────────────────────────────────────── -->
+<div class="container" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+  <h2 class="section-title">Documentation</h2>
+  <p class="section-sub" style="margin-bottom: 2rem;">Everything you need to go from installation to production.</p>
+
+  <div class="features" style="margin-top: 0;">
+
+    <a href="tutorial.html" class="feature-card" style="display:block; color: inherit; text-decoration: none;">
+      <span class="feature-icon">📖</span>
+      <div class="feature-title">Tutorial</div>
+      <div class="feature-desc">
+        Step-by-step introduction for newcomers. What is FASTQ?
+        How do I read it? What can I do with the records?
+      </div>
+    </a>
+
+    <a href="parsing.html" class="feature-card" style="display:block; color: inherit; text-decoration: none;">
+      <span class="feature-icon">⚙️</span>
+      <div class="feature-title">Parsing Methods</div>
+      <div class="feature-desc">
+        Deep-dive into the four iterators, when to use each,
+        and the performance trade-offs involved.
+      </div>
+    </a>
+
+    <a href="data-structures.html" class="feature-card" style="display:block; color: inherit; text-decoration: none;">
+      <span class="feature-icon">🗂️</span>
+      <div class="feature-title">Data Structures</div>
+      <div class="feature-desc">
+        <code>FQRecord</code>, <code>FQRecordPtr</code>, <code>FQPair</code>,
+        <code>SeqComp</code>, <code>Bufio</code>, <code>Interval</code> —
+        all types explained.
+      </div>
+    </a>
+
+    <a href="utilities.html" class="feature-card" style="display:block; color: inherit; text-decoration: none;">
+      <span class="feature-icon">🛠️</span>
+      <div class="feature-title">Utilities</div>
+      <div class="feature-desc">
+        Reverse complement, GC content, quality trimming,
+        base masking, composition analysis, and more.
+      </div>
+    </a>
+
+    <a href="theindex.html" class="feature-card" style="display:block; color: inherit; text-decoration: none;">
+      <span class="feature-icon">🔍</span>
+      <div class="feature-title">API Reference</div>
+      <div class="feature-desc">
+        Full symbol index generated directly from source
+        doc-comments by <code>nimble docs</code>.
+      </div>
+    </a>
+
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank" class="feature-card" style="display:block; color: inherit; text-decoration: none;">
+      <span class="feature-icon">💻</span>
+      <div class="feature-title">Source Code</div>
+      <div class="feature-desc">
+        Browse the repository, open issues, or contribute
+        on GitHub at Quadram Institute Bioscience.
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div>
+    <strong style="color: var(--grape-light);">ReadFX</strong>
+    — Nim FASTA/FASTQ library by
+    <a href="https://www.quadram.ac.uk" target="_blank">Quadram Institute Bioscience</a>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub</a>
+    <a href="theindex.html">API Reference</a>
+    <a href="tutorial.html">Tutorial</a>
+  </div>
+  <div style="margin-top: 0.75rem; font-size: 0.8rem;">
+    Built on <a href="https://github.com/attractivechaos/klib" target="_blank">kseq.h</a>
+    by Heng Li · Originally ported by
+    <a href="https://github.com/andreas-wilm/nimreadfq" target="_blank">Andreas Wilm</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parsing Methods — ReadFX</title>
+  <link rel="stylesheet" href="readfx.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/nim.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand">ReadFX</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="tutorial.html">Tutorial</a></li>
+    <li><a href="parsing.html" class="active">Parsing</a></li>
+    <li><a href="data-structures.html">Data Structures</a></li>
+    <li><a href="utilities.html">Utilities</a></li>
+    <li class="nav-sep"></li>
+    <li><a href="theindex.html">API Reference ↗</a></li>
+    <li class="nav-ext"><a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- ── Page header ────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Parsing Methods</h1>
+    <p>
+      ReadFX provides four iterators for reading FASTA and FASTQ files.
+      This page explains each one, when to use it, and what to watch out for.
+    </p>
+  </div>
+</div>
+
+<!-- ── Content ────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- Comparison table -->
+  <h2 id="comparison">Comparison at a Glance</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Returns</th>
+          <th>Memory</th>
+          <th>Speed</th>
+          <th>Ease of use</th>
+          <th>Use case</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>readFQ</code></td>
+          <td><code>FQRecord</code></td>
+          <td>Higher</td>
+          <td>Good</td>
+          <td>Excellent</td>
+          <td>General use</td>
+        </tr>
+        <tr>
+          <td><code>readFQPtr</code></td>
+          <td><code>FQRecordPtr</code></td>
+          <td>Low</td>
+          <td>Excellent</td>
+          <td>Moderate</td>
+          <td>High-throughput streaming</td>
+        </tr>
+        <tr>
+          <td><code>readFastx</code></td>
+          <td>fills <code>FQRecord</code></td>
+          <td>Custom</td>
+          <td>Excellent</td>
+          <td>Requires setup</td>
+          <td>Custom I/O workflows</td>
+        </tr>
+        <tr>
+          <td><code>readFQPair</code></td>
+          <td><code>FQPair</code></td>
+          <td>Moderate</td>
+          <td>Good</td>
+          <td>Excellent</td>
+          <td>Paired-end reads</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2rem 0;">
+
+  <!-- readFQ -->
+  <h2 id="readFQ"><code>readFQ</code></h2>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">iterator readFQ*(path: string): FQRecord</code></pre>
+  </div>
+
+  <p>
+    Yields <code>FQRecord</code> objects backed by Nim strings. Records are
+    completely safe to store, copy, or pass to any function after the loop body
+    returns — the data is owned by the record, not shared with an internal buffer.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+for record in readFQ("sample.fastq.gz"):
+  echo record.name, " (", record.sequence.len, " bp)"
+
+# Collect all names
+var names: seq[string]
+for record in readFQ("sample.fastq.gz"):
+  names.add(record.name)</code></pre>
+  </div>
+
+  <div class="callout tip">
+    <strong>When to use</strong>
+    This is the right default for most programs. Use <code>readFQ</code> unless
+    profiling shows that memory allocation is a bottleneck.
+  </div>
+
+  <p>
+    Internally, <code>readFQ</code> is built on top of <code>readFQPtr</code> and
+    converts the C pointers to Nim strings on each yield. The extra copy is usually
+    negligible.
+  </p>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- readFQPtr -->
+  <h2 id="readFQPtr"><code>readFQPtr</code></h2>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">iterator readFQPtr*(path: string): FQRecordPtr</code></pre>
+  </div>
+
+  <p>
+    Yields pointer-based records using Heng Li's <code>kseq.h</code> C library
+    directly via FFI. The underlying buffer is <strong>reused on every
+    iteration</strong> — the pointer returned on iteration <em>N</em> becomes
+    invalid when iteration <em>N+1</em> begins.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+for record in readFQPtr("sample.fastq.gz"):
+  # Safe: convert to string immediately
+  echo $record.name, ": ", len($record.sequence)</code></pre>
+  </div>
+
+  <div class="callout warning">
+    <strong>Pointer invalidation</strong>
+    Never store an <code>FQRecordPtr</code> or its fields across iterations.
+    If you need to retain data, convert it explicitly:
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim"># ✓ Safe — data copied to Nim string immediately
+var names: seq[string]
+for record in readFQPtr("sample.fastq.gz"):
+  names.add($record.name)
+
+# ✗ WRONG — ptr is invalid after the loop body
+var p: ptr char
+for record in readFQPtr("sample.fastq.gz"):
+  p = record.name   # undefined behaviour on next iteration</code></pre>
+  </div>
+
+  <div class="callout tip">
+    <strong>When to use</strong>
+    When processing tens or hundreds of millions of records and you have
+    confirmed (via profiling) that <code>readFQ</code>'s string allocation is a
+    bottleneck. For any output that requires retaining field data, convert to
+    strings with <code>$</code>.
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- readFastx -->
+  <h2 id="readFastx"><code>readFastx</code></h2>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool</code></pre>
+  </div>
+
+  <p>
+    The low-level native-Nim parser. Rather than an iterator, it is a procedure
+    that fills a caller-owned <code>FQRecord</code> and returns <code>true</code>
+    while records remain, <code>false</code> at end-of-file.
+  </p>
+
+  <p>
+    You open the file yourself with <code>xopen[GzFile]</code> and manage the
+    stream lifecycle with <code>defer: f.close()</code>.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+var record: FQRecord
+var f = xopen[GzFile]("sample.fastq.gz")
+defer: f.close()
+
+while f.readFastx(record):
+  echo record.name, " (", record.sequence.len, " bp)"</code></pre>
+  </div>
+
+  <p>
+    Because you control the loop, you can interleave reads from multiple streams,
+    add custom break conditions, or mix FASTX I/O with other file handles.
+  </p>
+
+  <h3>Status codes</h3>
+  <p>
+    After a call to <code>readFastx</code>, <code>record.status</code> contains
+    a diagnostic value:
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Value</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>&gt; 0</code></td><td>Sequence length — record parsed successfully</td></tr>
+        <tr><td><code>-1</code></td><td>End of file</td></tr>
+        <tr><td><code>-2</code></td><td>Stream error</td></tr>
+        <tr><td><code>-3</code></td><td>Other parsing error</td></tr>
+        <tr><td><code>-4</code></td><td>Sequence and quality length mismatch (FASTQ)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout tip">
+    <strong>When to use</strong>
+    Custom parsing workflows — for example, interleaving reads from two sources,
+    implementing a merge sort over multiple files, or building a streaming pipeline
+    that can pause and resume.
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- readFQPair -->
+  <h2 id="readFQPair"><code>readFQPair</code></h2>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">iterator readFQPair*(path1, path2: string, checkNames: bool = false): FQPair</code></pre>
+  </div>
+
+  <p>
+    Reads two FASTQ files in lockstep. On each iteration it yields an
+    <code>FQPair</code> with fields <code>read1</code> and <code>read2</code>,
+    both of type <code>FQRecord</code>.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
+  echo "R1: ", pair.read1.name, "  (", pair.read1.sequence.len, " bp)"
+  echo "R2: ", pair.read2.name, "  (", pair.read2.sequence.len, " bp)"</code></pre>
+  </div>
+
+  <h3>Error handling</h3>
+  <ul>
+    <li>
+      If one file contains more records than the other, an <code>IOError</code>
+      is raised.
+    </li>
+    <li>
+      With <code>checkNames = true</code>, the iterator strips common suffixes
+      (<code>/1</code>, <code>/2</code>, <code>&nbsp;1</code>, <code>&nbsp;2</code>)
+      from read names before comparing them. If they do not match, a
+      <code>ValueError</code> is raised.
+    </li>
+  </ul>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
+  # Raises ValueError if read1.name ≠ read2.name (after suffix stripping)
+  discard</code></pre>
+  </div>
+
+  <div class="callout">
+    <strong>Stdin support</strong>
+    <code>path1</code> may be <code>"-"</code> to read R1 from standard input.
+    Both files cannot be stdin simultaneously.
+  </div>
+
+  <div class="callout tip">
+    <strong>When to use</strong>
+    Any paired-end sequencing pipeline — Illumina R1/R2 files, mate-pair libraries,
+    or any scenario where two FASTQ files must be consumed in sync.
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- Implementation notes -->
+  <h2 id="implementation">Implementation notes</h2>
+
+  <ul>
+    <li>
+      <code>readFQ</code> and <code>readFQPtr</code> (and therefore
+      <code>readFQPair</code>) delegate to Heng Li's <code>kseq.h</code> C library
+      via Nim's FFI. <code>kseq.h</code> is a header-only, zero-copy streaming
+      parser optimised for maximum throughput on POSIX systems.
+    </li>
+    <li>
+      <code>readFastx</code> is a pure-Nim implementation located in
+      <code>readfx/nimklib.nim</code>, using the <code>Bufio</code> buffered I/O
+      layer also defined in the main module.
+    </li>
+    <li>
+      All four methods auto-detect gzip vs. plain text by inspecting the magic
+      bytes and support the FASTA (<code>&gt;</code>) and FASTQ (<code>@</code>)
+      formats interchangeably.
+    </li>
+  </ul>
+
+  <div style="margin-top: 3rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+    <a href="data-structures.html" class="btn btn-primary">Data structures →</a>
+    <a href="utilities.html" class="btn btn-outline">Utilities →</a>
+  </div>
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div>
+    <strong style="color: var(--grape-light);">ReadFX</strong>
+    — Nim FASTA/FASTQ library by
+    <a href="https://www.quadram.ac.uk" target="_blank">Quadram Institute Bioscience</a>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub</a>
+    <a href="theindex.html">API Reference</a>
+    <a href="index.html">Home</a>
+  </div>
+</footer>
+
+</body>
+</html>

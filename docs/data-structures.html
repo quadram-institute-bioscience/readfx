@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Structures — ReadFX</title>
+  <link rel="stylesheet" href="readfx.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/nim.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand">ReadFX</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="tutorial.html">Tutorial</a></li>
+    <li><a href="parsing.html">Parsing</a></li>
+    <li><a href="data-structures.html" class="active">Data Structures</a></li>
+    <li><a href="utilities.html">Utilities</a></li>
+    <li class="nav-sep"></li>
+    <li><a href="theindex.html">API Reference ↗</a></li>
+    <li class="nav-ext"><a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- ── Page header ────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Data Structures</h1>
+    <p>
+      Type definitions for every public type exported by ReadFX —
+      records, pairs, composition statistics, I/O buffers, and intervals.
+    </p>
+  </div>
+</div>
+
+<!-- ── Content ────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- FQRecord -->
+  <h2 id="FQRecord"><code>FQRecord</code></h2>
+
+  <p>
+    The primary record type. Returned by <code>readFQ</code>, filled by
+    <code>readFastx</code>, and used as the element type inside
+    <code>FQPair</code>. All fields are ordinary Nim strings — completely
+    safe to store, copy, and manipulate.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">type FQRecord* = object
+  name*:     string  # Sequence identifier (up to first whitespace)
+  comment*:  string  # Optional free-text after name (may be empty)
+  sequence*: string  # Nucleotide or amino-acid sequence
+  quality*:  string  # Phred quality string (empty for FASTA records)
+  status*, lastChar*: int  # Internal parsing state — see below</code></pre>
+  </div>
+
+  <h3>Status codes</h3>
+  <p>
+    Relevant only when using <code>readFastx</code> directly. <code>readFQ</code>
+    and <code>readFQPair</code> handle these internally.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Value</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>&gt; 0</code></td><td>Sequence length — record parsed successfully</td></tr>
+        <tr><td><code>-1</code></td><td>End of file</td></tr>
+        <tr><td><code>-2</code></td><td>Stream error</td></tr>
+        <tr><td><code>-3</code></td><td>Other parsing error</td></tr>
+        <tr><td><code>-4</code></td><td>Sequence and quality length mismatch in FASTQ</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">nim — basic usage</span>
+    <pre><code class="language-nim">for record in readFQ("sample.fastq.gz"):
+  echo record.name       # "read_001"
+  echo record.comment    # "length=150" or ""
+  echo record.sequence   # "ACGT..."
+  echo record.quality    # "IIII..." (empty for FASTA)</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- FQRecordPtr -->
+  <h2 id="FQRecordPtr"><code>FQRecordPtr</code></h2>
+
+  <p>
+    A pointer-based record for high-performance streaming via the
+    <code>kseq.h</code> C library. The fields point directly into a
+    reused internal buffer — <strong>they are invalidated on the next
+    iteration</strong>.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">type FQRecordPtr* = object
+  name*:     ptr char  # null-terminated C string
+  comment*:  ptr char  # null-terminated C string (may be nil)
+  sequence*: ptr char  # null-terminated C string
+  quality*:  ptr char  # null-terminated C string (nil for FASTA)</code></pre>
+  </div>
+
+  <p>
+    Convert a field to a Nim string with the <code>$</code> operator:
+    <code>$record.name</code>. This copies the data — safe to keep after
+    the loop body.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">for record in readFQPtr("sample.fastq.gz"):
+  let name = $record.name       # ✓ copied, safe to keep
+  let seq  = $record.sequence   # ✓ copied, safe to keep
+  echo name, ": ", seq.len</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- Choosing -->
+  <h2 id="choosing">FQRecord vs FQRecordPtr</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th><code>FQRecord</code></th>
+          <th><code>FQRecordPtr</code></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Memory model</td>
+          <td>Allocates Nim strings per record</td>
+          <td>Reuses a single C buffer</td>
+        </tr>
+        <tr>
+          <td>Safe to store</td>
+          <td>Yes</td>
+          <td>No — must copy with <code>$</code> first</td>
+        </tr>
+        <tr>
+          <td>Iterator</td>
+          <td><code>readFQ</code></td>
+          <td><code>readFQPtr</code></td>
+        </tr>
+        <tr>
+          <td>Typical throughput</td>
+          <td>Good</td>
+          <td>Excellent</td>
+        </tr>
+        <tr>
+          <td>Recommended for</td>
+          <td>Most programs</td>
+          <td>High-throughput streaming pipelines</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>Rule of thumb</strong>
+    Start with <code>readFQ</code> / <code>FQRecord</code>. Switch to
+    <code>readFQPtr</code> only if profiling shows allocation overhead
+    is measurable.
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- FQPair -->
+  <h2 id="FQPair"><code>FQPair</code></h2>
+
+  <p>
+    A paired-end record containing two <code>FQRecord</code> objects.
+    Yielded by <code>readFQPair</code>.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">type FQPair* = object
+  read1*: FQRecord   # Forward read (R1)
+  read2*: FQRecord   # Reverse read (R2)</code></pre>
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">nim — usage</span>
+    <pre><code class="language-nim">for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
+  echo pair.read1.name, " / ", pair.read2.name
+  echo pair.read1.sequence.len, " bp + ", pair.read2.sequence.len, " bp"</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- SeqComp -->
+  <h2 id="SeqComp"><code>SeqComp</code></h2>
+
+  <p>
+    Nucleotide composition statistics returned by the
+    <code>composition()</code> procedure.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">type SeqComp* = object
+  A*, C*, G*, T*: int   # Per-base counts
+  N*:             int   # Count of ambiguous bases
+  Other*:         int   # Non-ACGTN characters
+  GC*:            float # GC fraction (0.0–1.0)</code></pre>
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">nim — usage</span>
+    <pre><code class="language-nim">import readfx, strutils
+
+for record in readFQ("sample.fastq.gz"):
+  let c = composition(record)
+  echo record.name,
+       "  A=", c.A, " C=", c.C, " G=", c.G, " T=", c.T,
+       "  N=", c.N,
+       "  GC=", (c.GC * 100).formatFloat(ffDecimal, 1), "%"</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- Bufio -->
+  <h2 id="Bufio"><code>Bufio[T]</code></h2>
+
+  <p>
+    A generic buffered reader used internally by <code>readFastx</code>.
+    Typically instantiated as <code>Bufio[GzFile]</code> via
+    <code>xopen[GzFile](path)</code>. Handles both plain and gzip files
+    through the same interface.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">type Bufio*[T] = tuple[fp: T, buf: string, st, en, sz: int, EOF: bool]</code></pre>
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">nim — typical use with readFastx</span>
+    <pre><code class="language-nim">var record: FQRecord
+var f = xopen[GzFile]("sample.fastq.gz")
+defer: f.close()
+while f.readFastx(record):
+  echo record.name</code></pre>
+  </div>
+
+  <div class="callout">
+    <strong>Note</strong>
+    You rarely need to interact with <code>Bufio</code> directly beyond calling
+    <code>xopen</code>, <code>readFastx</code>, and <code>close</code>.
+    For line-oriented access, <code>readLine</code> is also available.
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- Interval -->
+  <h2 id="Interval"><code>Interval[S,T]</code></h2>
+
+  <p>
+    A genomic interval for use with the built-in interval tree. Useful
+    for overlap queries on annotation data alongside sequence parsing.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">type Interval*[S,T] = tuple[st, en: S, data: T, max: S]</code></pre>
+  </div>
+
+  <p>
+    Build an interval set, call <code>index()</code> to prepare it, then
+    query with the <code>overlap()</code> iterator:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">var ivs: seq[Interval[int, string]]
+ivs.add((st: 100, en: 200, data: "gene_A", max: 0))
+ivs.add((st: 150, en: 300, data: "gene_B", max: 0))
+
+ivs.sort()
+ivs.index()
+
+for iv in ivs.overlap(120, 180):
+  echo iv.data   # "gene_A", "gene_B"</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- Performance notes -->
+  <h2 id="performance">Performance notes</h2>
+
+  <p>
+    Benchmarks in the <code>benchmark/</code> directory show that with
+    <code>--opt:speed --gc:arc</code>, the performance difference between
+    object and tuple layouts becomes negligible. Recommended compile flags
+    for production:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">shell</span>
+    <pre><code class="language-bash">nim c --opt:speed --gc:arc myprogram.nim</code></pre>
+  </div>
+
+  <div style="margin-top: 3rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+    <a href="utilities.html" class="btn btn-primary">Utilities →</a>
+    <a href="parsing.html" class="btn btn-outline">← Parsing methods</a>
+  </div>
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div>
+    <strong style="color: var(--grape-light);">ReadFX</strong>
+    — Nim FASTA/FASTQ library by
+    <a href="https://www.quadram.ac.uk" target="_blank">Quadram Institute Bioscience</a>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub</a>
+    <a href="theindex.html">API Reference</a>
+    <a href="index.html">Home</a>
+  </div>
+</footer>
+
+</body>
+</html>

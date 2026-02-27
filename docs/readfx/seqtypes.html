@@ -77,6 +77,10 @@
   GC*: float                 ## GC content (ratio of G+C to total nucleotides)
   N*: int                    ## Count of ambiguous (N) nucleotides
   Other*: int                ## Count of other characters (non-ACGTN)">SeqComp</a></li>
+<li><a class="reference" href="#Strand" title="Strand = enum
+  Forward,                  ## Forward strand / plus orientation
+  Reverse,                  ## Reverse strand / minus orientation
+  Unknown                    ## Strand information is not available">Strand</a></li>
 
     </ul>
   </details>
@@ -220,6 +224,19 @@
 
   </dd>
 </div>
+<div id="Strand">
+  <dt><pre><a href="seqtypes.html#Strand"><span class="Identifier">Strand</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
+  <span class="Identifier">Forward</span><span class="Other">,</span>                  <span class="Comment">## Forward strand / plus orientation</span>
+  <span class="Identifier">Reverse</span><span class="Other">,</span>                  <span class="Comment">## Reverse strand / minus orientation</span>
+  <span class="Identifier">Unknown</span>                    <span class="Comment">## Strand information is not available</span></pre></dt>
+  <dd>
+    
+    
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/seqtypes.nim#L148" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/seqtypes.nim#L148" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
 
   </dl>
 </div>
@@ -230,7 +247,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 07:10:35 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 12:54:45 UTC</small>
       </div>
     </div>
   </div>

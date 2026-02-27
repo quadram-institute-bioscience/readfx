@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Utilities — ReadFX</title>
+  <link rel="stylesheet" href="readfx.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/nim.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand">ReadFX</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="tutorial.html">Tutorial</a></li>
+    <li><a href="parsing.html">Parsing</a></li>
+    <li><a href="data-structures.html">Data Structures</a></li>
+    <li><a href="utilities.html" class="active">Utilities</a></li>
+    <li class="nav-sep"></li>
+    <li><a href="theindex.html">API Reference ↗</a></li>
+    <li class="nav-ext"><a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- ── Page header ────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Utilities</h1>
+    <p>
+      Sequence manipulation, quality operations, and IUPAC primer matching —
+      all exported automatically by <code>import readfx</code>.
+    </p>
+  </div>
+</div>
+
+<!-- ── Content ────────────────────────────────────────────── -->
+<main class="main">
+
+  <p>
+    Utility procedures are defined in <code>readfx/sequtils.nim</code> and
+    <code>readfx/oligoutils.nim</code> and re-exported by the top-level module.
+    No additional imports are needed.
+  </p>
+
+  <!-- ── DNA operations ─────────────────────────────────── -->
+  <h2 id="dna">DNA Sequence Operations</h2>
+
+  <!-- revCompl -->
+  <h3 id="revCompl"><code>revCompl</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signatures</span>
+    <pre><code class="language-nim">proc revCompl*(sequence: string): string
+proc revCompl*(record: var FQRecord)        # in-place; also reverses quality
+proc revCompl*(record: FQRecord): FQRecord  # returns a new record</code></pre>
+  </div>
+
+  <p>
+    Reverse complements a DNA sequence. The in-place variant modifies both
+    <code>sequence</code> and <code>quality</code> (the quality string is
+    reversed to stay in sync).
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let rc = revCompl("ATGCCC")    # → "GGGCAT"
+
+var rec: FQRecord = ...
+revCompl(rec)                   # modify in place
+let copy = revCompl(rec)        # new reversed record</code></pre>
+  </div>
+
+  <!-- gcContent -->
+  <h3 id="gcContent"><code>gcContent</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signatures</span>
+    <pre><code class="language-nim">proc gcContent*(sequence: string): float
+proc gcContent*(record: FQRecord): float</code></pre>
+  </div>
+
+  <p>Returns the GC fraction as a <code>float</code> in the range 0.0–1.0.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let gc = gcContent("ATGCATGC")   # 0.5
+echo (gc * 100).int, "%"         # 50%</code></pre>
+  </div>
+
+  <!-- composition -->
+  <h3 id="composition"><code>composition</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc composition*(record: FQRecord): SeqComp</code></pre>
+  </div>
+
+  <p>
+    Returns a <a href="data-structures.html#SeqComp"><code>SeqComp</code></a>
+    object with per-base counts (A, C, G, T, N, Other) and a precomputed
+    <code>GC</code> fraction.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let comp = composition(record)
+echo "A=", comp.A, " C=", comp.C, " G=", comp.G, " T=", comp.T
+echo "N=", comp.N, " GC=", comp.GC</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- ── Quality operations ──────────────────────────────── -->
+  <h2 id="quality">Quality Operations</h2>
+
+  <p>
+    ReadFX uses <strong>Sanger/Illumina 1.8+ encoding</strong> by default: offset 33.
+    All quality procedures accept an optional <code>offset</code> parameter if you
+    need to handle legacy encodings.
+  </p>
+
+  <!-- qualCharToInt / qualIntToChar -->
+  <h3 id="qualConvert"><code>qualCharToInt</code> / <code>qualIntToChar</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signatures</span>
+    <pre><code class="language-nim">proc qualCharToInt*(c: char, offset: int = 33): int
+proc qualIntToChar*(q: int, offset: int = 33): char</code></pre>
+  </div>
+
+  <p>Convert between quality characters and Phred integer scores.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let q = qualCharToInt('I')   # 73 - 33 = 40
+let c = qualIntToChar(30)    # '?' (ASCII 30 + 33 = 63)</code></pre>
+  </div>
+
+  <!-- avgQuality -->
+  <h3 id="avgQuality"><code>avgQuality</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signatures</span>
+    <pre><code class="language-nim">proc avgQuality*(record: FQRecord, offset: int = 33): float
+proc avgQuality*(quality: string, offset: int = 33): float</code></pre>
+  </div>
+
+  <p>Returns the mean Phred quality score as a <code>float</code>.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let avg = avgQuality(record)
+echo "Mean Q: ", avg   # e.g. 34.7</code></pre>
+  </div>
+
+  <!-- trimQuality -->
+  <h3 id="trimQuality"><code>trimQuality</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc trimQuality*(quality: string, minQual: int, offset: int = 33): string</code></pre>
+  </div>
+
+  <p>
+    Trims trailing bases below <code>minQual</code> from a quality string
+    and returns the trimmed string. Does not modify the sequence — use
+    <code>qualityTrim</code> to trim both together.
+  </p>
+
+  <!-- qualityTrim -->
+  <h3 id="qualityTrim"><code>qualityTrim</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc qualityTrim*(record: var FQRecord, minQual: int, offset: int = 33)</code></pre>
+  </div>
+
+  <p>
+    Trims both <code>sequence</code> and <code>quality</code> in place,
+    removing 3′ bases with Phred score below <code>minQual</code>.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">var r = record
+qualityTrim(r, 20)    # remove 3′ bases with Q < 20
+echo r.sequence.len   # length may be shorter</code></pre>
+  </div>
+
+  <!-- maskLowQuality -->
+  <h3 id="maskLowQuality"><code>maskLowQuality</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc maskLowQuality*(record: var FQRecord, minQual: int,
+                     offset: int = 33, maskChar: char = 'N')</code></pre>
+  </div>
+
+  <p>
+    Replaces bases with Phred score below <code>minQual</code> with
+    <code>maskChar</code> (default <code>'N'</code>) without changing the
+    length of the record. Useful when you want to preserve alignment
+    positions but flag unreliable bases.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">var r = record
+maskLowQuality(r, 20)              # replace Q<20 with 'N'
+maskLowQuality(r, 15, maskChar='X')  # or any character</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- ── Record manipulation ─────────────────────────────── -->
+  <h2 id="manipulation">Record Manipulation</h2>
+
+  <!-- subSequence -->
+  <h3 id="subSequence"><code>subSequence</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord</code></pre>
+  </div>
+
+  <p>
+    Returns a new record containing a slice of the sequence (and the
+    corresponding quality bases). <code>length = -1</code> means "to the end".
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let first50  = subSequence(record, 0, 50)   # bases 0..49
+let fromPos  = subSequence(record, 10)      # bases 10..end</code></pre>
+  </div>
+
+  <!-- trimStart / trimEnd -->
+  <h3 id="trimStartEnd"><code>trimStart</code> / <code>trimEnd</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signatures</span>
+    <pre><code class="language-nim">proc trimStart*(record: FQRecord, bases: int): FQRecord
+proc trimEnd*(record: FQRecord, bases: int): FQRecord</code></pre>
+  </div>
+
+  <p>
+    Remove a fixed number of bases from the 5′ or 3′ end. Return a new
+    <code>FQRecord</code> (non-destructive).
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let clipped = trimStart(record, 5)   # remove first 5 bases
+let cropped = trimEnd(record, 3)     # remove last 3 bases</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- ── IUPAC matching ─────────────────────────────────── -->
+  <h2 id="iupac">IUPAC Primer Matching</h2>
+
+  <p>
+    These functions are in <code>readfx/oligoutils.nim</code> and re-exported
+    by the main module. They support IUPAC ambiguity codes in primers:
+    <code>R</code>&nbsp;(A/G), <code>Y</code>&nbsp;(C/T), <code>S</code>&nbsp;(G/C),
+    <code>W</code>&nbsp;(A/T), <code>K</code>&nbsp;(G/T), <code>M</code>&nbsp;(A/C),
+    <code>B</code>, <code>D</code>, <code>H</code>, <code>V</code>,
+    and <code>N</code>&nbsp;(any).
+  </p>
+
+  <h3 id="matchIUPAC"><code>matchIUPAC</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc matchIUPAC*(primerBase, seqBase: char): bool</code></pre>
+  </div>
+
+  <p>
+    Returns <code>true</code> if <code>seqBase</code> is compatible with
+    <code>primerBase</code> under IUPAC rules. The code is asymmetric —
+    ambiguity codes are only recognised in the primer.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">echo matchIUPAC('R', 'A')   # true  — R matches A or G
+echo matchIUPAC('R', 'C')   # false
+echo matchIUPAC('N', 'T')   # true  — N matches anything</code></pre>
+  </div>
+
+  <h3 id="findPrimerMatches"><code>findPrimerMatches</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature (simplified)</span>
+    <pre><code class="language-nim">proc findPrimerMatches*(sequence, primer: string,
+                        maxMismatches: int = 0): seq[int]</code></pre>
+  </div>
+
+  <p>
+    Returns the 0-based positions where <code>primer</code> binds in
+    <code>sequence</code>, allowing up to <code>maxMismatches</code>
+    non-IUPAC-matching positions.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let positions = findPrimerMatches("AAACGTGGGCGT", "RCGT", maxMismatches = 0)
+for pos in positions:
+  echo "primer binds at position ", pos</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- ── Formatting ─────────────────────────────────────── -->
+  <h2 id="formatting">Formatting</h2>
+
+  <h3><code>$</code> operator</h3>
+
+  <p>
+    Both <code>FQRecord</code> and <code>FQRecordPtr</code> have a
+    <code>$</code> operator that produces FASTQ-formatted output (or
+    FASTA if the quality field is empty).
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">for record in readFQ("sample.fastq.gz"):
+  echo $record   # four-line FASTQ block</code></pre>
+  </div>
+
+  <h3><code>fafmt</code></h3>
+
+  <div class="code-wrap">
+    <span class="code-label">signature</span>
+    <pre><code class="language-nim">proc fafmt*(record: FQRecord, lineWidth: int = 60): string</code></pre>
+  </div>
+
+  <p>
+    Formats a record as FASTA with the sequence wrapped at
+    <code>lineWidth</code> characters per line.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">echo fafmt(record, 80)   # wrapped FASTA output</code></pre>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;">
+
+  <!-- ── Complete example ───────────────────────────────── -->
+  <h2 id="example">Complete Example</h2>
+
+  <p>
+    A practical pipeline: read a FASTQ file, quality-trim, mask remaining
+    low-quality bases, filter short reads, and report composition.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx, strutils
+
+const minLen  = 50
+const minQual = 20
+
+var passed = 0
+var total  = 0
+
+for record in readFQ("sample.fastq.gz"):
+  inc total
+  var r = record
+
+  # 1. Trim 3' low-quality tail
+  qualityTrim(r, minQual)
+
+  # 2. Skip reads that became too short
+  if r.sequence.len < minLen:
+    continue
+
+  # 3. Mask any remaining Q<15 bases with 'N'
+  maskLowQuality(r, 15)
+
+  # 4. Report stats
+  let comp = composition(r)
+  let avg  = avgQuality(r)
+
+  echo r.name,
+       "\tlen=",  r.sequence.len,
+       "\tGC=",   (comp.GC * 100).formatFloat(ffDecimal, 1), "%",
+       "\tmeanQ=", avg.formatFloat(ffDecimal, 1)
+
+  inc passed
+
+echo passed, "/", total, " reads passed filters"</code></pre>
+  </div>
+
+  <div style="margin-top: 3rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+    <a href="theindex.html" class="btn btn-primary">Full API reference →</a>
+    <a href="data-structures.html" class="btn btn-outline">← Data structures</a>
+  </div>
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div>
+    <strong style="color: var(--grape-light);">ReadFX</strong>
+    — Nim FASTA/FASTQ library by
+    <a href="https://www.quadram.ac.uk" target="_blank">Quadram Institute Bioscience</a>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub</a>
+    <a href="theindex.html">API Reference</a>
+    <a href="index.html">Home</a>
+  </div>
+</footer>
+
+</body>
+</html>

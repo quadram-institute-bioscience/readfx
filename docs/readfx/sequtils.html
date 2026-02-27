@@ -175,7 +175,11 @@
   <dt><pre><span class="Keyword">proc</span> <a href="#composition%2CFQRecord"><span class="Identifier">composition</span></a><span class="Other">(</span><span class="Identifier">record</span><span class="Other">:</span> <a href="seqtypes.html#FQRecord"><span class="Identifier">FQRecord</span></a><span class="Other">)</span><span class="Other">:</span> <a href="seqtypes.html#SeqComp"><span class="Identifier">SeqComp</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Calculate composition of a DNA Sequence Returns a SeqComp object with counts of A, C, G, T, N, and Other (int) and GC content (float)
+    <p>Calculate base composition for a sequence record.</p>
+<p>Args: record: Input record to analyze</p>
+<p>Returns: <tt class="docutils literal"><span class="pre"><span class="Identifier">SeqComp</span></span></tt> with A/C/G/T/N/Other counts and GC fraction.</p>
+<p>Notes: GC is calculated over valid A/C/G/T bases only. If a sequence has no valid A/C/G/T bases (for example only <tt class="docutils literal"><span class="pre"><span class="Identifier">N</span></span></tt>/other symbols), <tt class="docutils literal"><span class="pre"><span class="Identifier">GC</span></span></tt> is set to <tt class="docutils literal"><span class="pre"><span class="FloatNumber">0.0</span></span></tt>.</p>
+
     <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L351" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
 <a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L351" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
@@ -206,8 +210,8 @@
   <dd>
     
     Calculate GC content of a FQRecord (using its sequence)
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L390" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L390" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L400" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L400" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -219,8 +223,8 @@
 <p>Args: sequence: DNA sequence</p>
 <p>Returns: GC content as a fraction between 0.0 and 1.0</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L372" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L372" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L382" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L382" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -235,8 +239,8 @@
     <p>Mask sequence positions with low quality scores</p>
 <p>Args: record: FQRecord to modify minQual: Minimum quality value offset: Quality score offset maskChar: Character to use for masking</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L394" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L394" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/sequtils.nim#L404" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/sequtils.nim#L404" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -414,7 +418,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 07:10:35 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 12:54:45 UTC</small>
       </div>
     </div>
   </div>

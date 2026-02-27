@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tutorial — ReadFX</title>
+  <link rel="stylesheet" href="readfx.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/nim.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand">ReadFX</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="tutorial.html" class="active">Tutorial</a></li>
+    <li><a href="parsing.html">Parsing</a></li>
+    <li><a href="data-structures.html">Data Structures</a></li>
+    <li><a href="utilities.html">Utilities</a></li>
+    <li class="nav-sep"></li>
+    <li><a href="theindex.html">API Reference ↗</a></li>
+    <li class="nav-ext"><a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- ── Page header ────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Tutorial</h1>
+    <p>A plain-English guide to reading and processing sequence data with ReadFX.</p>
+  </div>
+</div>
+
+<!-- ── Content ────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- 1. Background -->
+  <h2 id="background">What are FASTA and FASTQ?</h2>
+  <p>
+    <strong>FASTA</strong> is the simplest sequence format. Each record is two lines:
+    a <em>header</em> (starting with <code>&gt;</code>) followed by the nucleotide
+    or amino-acid sequence.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">fasta</span>
+    <pre><code>&gt;read_001 some optional comment
+ACGTACGTACGTACGTACGT</code></pre>
+  </div>
+
+  <p>
+    <strong>FASTQ</strong> extends FASTA with per-base quality scores. Every record
+    spans four lines:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">fastq</span>
+    <pre><code>@read_001 some optional comment
+ACGTACGTACGTACGTACGT
++
+IIIIIIIIIIIIIIIIIIII</code></pre>
+  </div>
+
+  <p>
+    Line 3 is always a bare <code>+</code>. Line 4 encodes Phred quality scores as
+    ASCII characters — subtract 33 from the character code to get the integer score
+    (e.g., <code>'I'</code> = ASCII 73 − 33 = Q40, meaning a 1-in-10,000 base-call
+    error probability). ReadFX handles the conversion for you.
+  </p>
+
+  <p>
+    Files are almost always gzip-compressed (<code>.fastq.gz</code>). ReadFX
+    decompresses transparently — you don't need to gunzip first.
+  </p>
+
+  <!-- 2. Installation -->
+  <h2 id="install">Installation</h2>
+
+  <p>
+    Install the library via <a href="https://nim-lang.org/docs/nimble.html" target="_blank">Nimble</a>:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">shell</span>
+    <pre><code class="language-bash">nimble install readfx</code></pre>
+  </div>
+
+  <p>
+    Or add it to your project's <code>.nimble</code> file:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nimble</span>
+    <pre><code>requires "readfx >= 0.2.0"</code></pre>
+  </div>
+
+  <p>Then in your source:</p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx</code></pre>
+  </div>
+
+  <p>That single import brings in all types, parsers, and utilities.</p>
+
+  <!-- 3. First steps -->
+  <h2 id="first-steps">Reading your first file</h2>
+
+  <p>
+    The easiest way to iterate over records is <code>readFQ</code>. It yields one
+    <code>FQRecord</code> per sequence — think of it as a Nim <code>for</code> loop
+    over the file.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+for record in readFQ("sample.fastq.gz"):
+  echo record.name, " (", record.sequence.len, " bp)"</code></pre>
+  </div>
+
+  <p>
+    Works equally well on FASTA files and on uncompressed files. To read from
+    standard input, pass <code>"-"</code> as the path:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">for record in readFQ("-"):
+  echo record.name</code></pre>
+  </div>
+
+  <div class="callout">
+    <strong>Compile with optimisations</strong>
+    For production use, add <code>--opt:speed --gc:arc</code> to your compile command.
+    This can double throughput with no code changes.
+  </div>
+
+  <!-- 4. The FQRecord type -->
+  <h2 id="fqrecord">Understanding the FQRecord</h2>
+
+  <p>
+    Every record returned by <code>readFQ</code> is an <code>FQRecord</code> object
+    with four string fields:
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td><code>string</code></td>
+          <td>Sequence identifier (everything up to the first space on the header line)</td>
+        </tr>
+        <tr>
+          <td><code>comment</code></td>
+          <td><code>string</code></td>
+          <td>Optional free-text after the name (may be empty)</td>
+        </tr>
+        <tr>
+          <td><code>sequence</code></td>
+          <td><code>string</code></td>
+          <td>Nucleotide or amino-acid sequence</td>
+        </tr>
+        <tr>
+          <td><code>quality</code></td>
+          <td><code>string</code></td>
+          <td>Phred quality string (empty for FASTA records)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+for record in readFQ("sample.fastq.gz"):
+  echo "Name:     ", record.name
+  echo "Comment:  ", record.comment
+  echo "Sequence: ", record.sequence
+  echo "Length:   ", record.sequence.len
+  echo "Quality:  ", record.quality     # empty if FASTA
+  echo "---"</code></pre>
+  </div>
+
+  <p>
+    Because the fields are plain Nim strings, you can use the entire Nim standard
+    library on them — <code>strutils</code>, <code>sequtils</code>, regex, etc.
+  </p>
+
+  <!-- 5. Sequence utilities -->
+  <h2 id="utilities">Working with sequences</h2>
+
+  <p>
+    ReadFX exports a collection of sequence-manipulation procedures that operate
+    directly on <code>FQRecord</code> objects (or plain strings).
+  </p>
+
+  <h3>Reverse complement</h3>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let rc = revCompl("ATGCCC")   # → "GGGCAT"
+
+var rec: FQRecord = ...
+revCompl(rec)                  # modify in place (also reverses quality)
+let copy = revCompl(rec)       # get a new reversed copy</code></pre>
+  </div>
+
+  <h3>GC content</h3>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let gc = gcContent(record)   # returns a float, 0.0–1.0
+echo "GC: ", (gc * 100).int, "%"</code></pre>
+  </div>
+
+  <h3>Nucleotide composition</h3>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let comp = composition(record)
+echo "A=", comp.A, " C=", comp.C, " G=", comp.G, " T=", comp.T
+echo "N=", comp.N, " GC=", comp.GC</code></pre>
+  </div>
+
+  <h3>Quality trimming</h3>
+  <p>
+    Remove low-quality bases from the 3′ end. The record's <code>sequence</code>
+    and <code>quality</code> strings are both shortened in place.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">var r = record           # make a mutable copy
+qualityTrim(r, 20)       # trim bases with Phred score < 20
+echo r.sequence.len      # may be shorter now</code></pre>
+  </div>
+
+  <h3>Masking low-quality bases</h3>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">maskLowQuality(r, 20)              # replace Q<20 with 'N'
+maskLowQuality(r, 15, maskChar='X')  # or any other character</code></pre>
+  </div>
+
+  <h3>Subsequence extraction</h3>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">let first50 = subSequence(record, 0, 50)   # first 50 bases
+let fromPos = subSequence(record, 10)      # from base 10 to end
+let trimmed = trimStart(record, 5)         # remove 5 bases from 5' end
+let clipped  = trimEnd(record, 3)          # remove 3 bases from 3' end</code></pre>
+  </div>
+
+  <!-- 6. Full worked example -->
+  <h2 id="example">Full worked example</h2>
+
+  <p>
+    Putting it all together: read a file, filter short reads, trim quality,
+    report per-record statistics.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx, strutils
+
+const minLength = 50
+const minQual   = 20
+
+for record in readFQ("sample.fastq.gz"):
+  # Skip short sequences
+  if record.sequence.len < minLength:
+    continue
+
+  # Work on a mutable copy
+  var r = record
+  qualityTrim(r, minQual)
+
+  # Skip reads that became too short after trimming
+  if r.sequence.len < minLength:
+    continue
+
+  let comp = composition(r)
+  let avg  = avgQuality(r)
+
+  echo r.name,
+       "\tlen=", r.sequence.len,
+       "\tGC=",  (comp.GC * 100).formatFloat(ffDecimal, 1), "%",
+       "\tQ=",   avg.formatFloat(ffDecimal, 1)</code></pre>
+  </div>
+
+  <!-- 7. Paired-end reads -->
+  <h2 id="paired-end">Paired-end reads</h2>
+
+  <p>
+    Illumina sequencing typically produces two files per sample: R1 (forward reads)
+    and R2 (reverse reads). The <code>readFQPair</code> iterator reads both files
+    in lockstep, yielding an <code>FQPair</code> containing both mates.
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">import readfx
+
+for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
+  echo "R1: ", pair.read1.name, "  (", pair.read1.sequence.len, " bp)"
+  echo "R2: ", pair.read2.name, "  (", pair.read2.sequence.len, " bp)"</code></pre>
+  </div>
+
+  <p>
+    If the files have different numbers of records, an <code>IOError</code> is raised.
+    Enable name validation to catch mismatched or scrambled files:
+  </p>
+
+  <div class="code-wrap">
+    <span class="code-label">nim</span>
+    <pre><code class="language-nim">for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
+  # raises ValueError if read names don't match
+  # strips /1 /2 suffixes automatically before comparing
+  discard</code></pre>
+  </div>
+
+  <!-- 8. Choosing a parser -->
+  <h2 id="choosing">Choosing the right parser</h2>
+
+  <p>
+    ReadFX exposes three single-file parsers. Here's the mental model:
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Iterator</th>
+          <th>Returns</th>
+          <th>When to use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>readFQ</code></td>
+          <td><code>FQRecord</code></td>
+          <td>
+            <strong>Start here.</strong> Yields safe Nim strings; records can
+            be stored in sequences, passed to functions, etc.
+          </td>
+        </tr>
+        <tr>
+          <td><code>readFQPtr</code></td>
+          <td><code>FQRecordPtr</code></td>
+          <td>
+            Processing tens of millions of reads where allocation overhead
+            is measurable. <em>Do not store pointers across iterations.</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>readFastx</code></td>
+          <td>fills <code>FQRecord</code></td>
+          <td>
+            Custom I/O workflows — e.g. interleaving reads from two
+            different sources in a single loop.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warning">
+    <strong>readFQPtr warning</strong>
+    The C-level buffer backing <code>FQRecordPtr</code> fields is reused on every
+    iteration. Converting to a Nim string with <code>$record.name</code> is safe,
+    but storing the raw pointer is not. If in doubt, use <code>readFQ</code>.
+  </div>
+
+  <!-- 9. Performance tips -->
+  <h2 id="performance">Performance tips</h2>
+
+  <ul>
+    <li>
+      Compile with <code>--opt:speed --gc:arc</code> for best throughput.
+      ARC's deterministic memory management eliminates GC pauses.
+    </li>
+    <li>
+      Prefer <code>readFQPtr</code> when you only need a few fields
+      (e.g., just the sequence) and don't need to store records.
+    </li>
+    <li>
+      Avoid re-allocating inside tight loops — compute expensive operations
+      outside of the hot path when possible.
+    </li>
+    <li>
+      The library auto-detects gzip vs. plain text; no penalty for checking.
+    </li>
+  </ul>
+
+  <!-- 10. Next steps -->
+  <h2 id="next">Next steps</h2>
+
+  <div class="api-cards">
+    <a href="parsing.html" class="api-card" style="text-decoration:none; display:block;">
+      <div class="api-card-name">Parsing methods</div>
+      <div class="api-card-desc">Detailed comparison of all four iterators with benchmarks and use-case guidance.</div>
+    </a>
+    <a href="data-structures.html" class="api-card" style="text-decoration:none; display:block;">
+      <div class="api-card-name">Data structures</div>
+      <div class="api-card-desc">Full type definitions for FQRecord, FQPair, SeqComp, Bufio, and Interval.</div>
+    </a>
+    <a href="utilities.html" class="api-card" style="text-decoration:none; display:block;">
+      <div class="api-card-name">Utilities reference</div>
+      <div class="api-card-desc">Every sequence and quality procedure with signatures and examples.</div>
+    </a>
+    <a href="theindex.html" class="api-card" style="text-decoration:none; display:block;">
+      <div class="api-card-name">API index</div>
+      <div class="api-card-desc">Generated symbol index for the full library — searchable by name.</div>
+    </a>
+  </div>
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div>
+    <strong style="color: var(--grape-light);">ReadFX</strong>
+    — Nim FASTA/FASTQ library by
+    <a href="https://www.quadram.ac.uk" target="_blank">Quadram Institute Bioscience</a>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/quadram-institute-bioscience/readfx" target="_blank">GitHub</a>
+    <a href="theindex.html">API Reference</a>
+    <a href="index.html">Home</a>
+  </div>
+</footer>
+
+</body>
+</html>
