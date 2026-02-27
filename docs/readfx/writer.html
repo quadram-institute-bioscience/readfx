@@ -74,6 +74,7 @@
   destination*: FastxDestination
   bufferSize*: int
   compressionLevel*: int
+  compressionThreads*: int
   fastaWidth*: int
   isOpen*: bool">FastxWriter</a></li>
 
@@ -100,15 +101,15 @@
 
 </ul>
 <ul class="simple nested-toc-section">fastxWriter
-  <li><a class="reference" href="#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint" title="fastxWriter(format: FastxFormat; compression: bool = false;
+  <li><a class="reference" href="#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint%2Cint" title="fastxWriter(format: FastxFormat; compression: bool = false;
             destination: FastxDestination = stdoutDestination();
             bufferSize: int = DefaultBufferSize;
             compressionLevel: int = DefaultCompressionLevel;
-            fastaWidth: int = DefaultFastaWidth): FastxWriter">fastxWriter(format: FastxFormat; compression: bool = false;
+            compressionThreads: int = 1; fastaWidth: int = DefaultFastaWidth): FastxWriter">fastxWriter(format: FastxFormat; compression: bool = false;
             destination: FastxDestination = stdoutDestination();
             bufferSize: int = DefaultBufferSize;
             compressionLevel: int = DefaultCompressionLevel;
-            fastaWidth: int = DefaultFastaWidth): FastxWriter</a></li>
+            compressionThreads: int = 1; fastaWidth: int = DefaultFastaWidth): FastxWriter</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">fileDestination
@@ -189,8 +190,8 @@
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L50" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L50" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L51" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L51" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -201,8 +202,8 @@
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L45" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L45" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L46" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L46" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -213,8 +214,8 @@
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L40" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L40" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L41" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L41" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -225,14 +226,15 @@
   <span class="Identifier">destination</span><span class="Operator">*</span><span class="Other">:</span> <a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a>
   <span class="Identifier">bufferSize</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">compressionLevel</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
+  <span class="Identifier">compressionThreads</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">fastaWidth</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">isOpen</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">bool</span>
   </pre></dt>
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L67" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L67" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L69" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L69" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -247,8 +249,8 @@
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L34" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L34" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L35" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L35" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -257,8 +259,8 @@
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L35" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L35" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L36" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L36" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -267,8 +269,8 @@
   <dd>
     
     
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L36" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L36" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L37" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L37" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -280,37 +282,39 @@
   <dl class="item">
     <div id="close-procs-all">
   <div id="close,FastxWriter">
-  <dt><pre><span class="Keyword">proc</span> <a href="#close%2CFastxWriter"><span class="Identifier">close</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
-                                 <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#close%2CFastxWriter"><span class="Identifier">close</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">]</span><span class="Other">,</span>
+                                 <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Flush and close the writer stream.</p>
 <p>It is safe to call <tt class="docutils literal"><span class="pre"><span class="Identifier">close</span></span></tt> multiple times.</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L231" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L231" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L246" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L246" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
 
 </div>
 <div id="fastxWriter-procs-all">
-  <div id="fastxWriter,FastxFormat,bool,FastxDestination,int,int,int">
-  <dt><pre><span class="Keyword">proc</span> <a href="#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint"><span class="Identifier">fastxWriter</span></a><span class="Other">(</span><span class="Identifier">format</span><span class="Other">:</span> <a href="writer.html#FastxFormat"><span class="Identifier">FastxFormat</span></a><span class="Other">;</span> <span class="Identifier">compression</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
+  <div id="fastxWriter,FastxFormat,bool,FastxDestination,int,int,int,int">
+  <dt><pre><span class="Keyword">proc</span> <a href="#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint%2Cint"><span class="Identifier">fastxWriter</span></a><span class="Other">(</span><span class="Identifier">format</span><span class="Other">:</span> <a href="writer.html#FastxFormat"><span class="Identifier">FastxFormat</span></a><span class="Other">;</span> <span class="Identifier">compression</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
                  <span class="Identifier">destination</span><span class="Other">:</span> <a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a> <span class="Other">=</span> <span class="Identifier">stdoutDestination</span><span class="Other">(</span><span class="Other">)</span><span class="Other">;</span>
                  <span class="Identifier">bufferSize</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultBufferSize</span><span class="Other">;</span>
                  <span class="Identifier">compressionLevel</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultCompressionLevel</span><span class="Other">;</span>
+                 <span class="Identifier">compressionThreads</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span>
                  <span class="Identifier">fastaWidth</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultFastaWidth</span><span class="Other">)</span><span class="Other">:</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span>
+    <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ExecIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Create and open a configured FASTA/FASTQ writer.</p>
-<p>Args: format: Output format (<tt class="docutils literal"><span class="pre"><span class="Identifier">fxfFasta</span></span></tt> or <tt class="docutils literal"><span class="pre"><span class="Identifier">fxfFastq</span></span></tt>) compression: Enable gzip compression for output stream destination: Output destination (stdout or file) bufferSize: Application-level output buffer size in bytes compressionLevel: zlib compression level (0..9) fastaWidth: FASTA sequence line width (used only in FASTA mode)</p>
+<p>Args: format: Output format (<tt class="docutils literal"><span class="pre"><span class="Identifier">fxfFasta</span></span></tt> or <tt class="docutils literal"><span class="pre"><span class="Identifier">fxfFastq</span></span></tt>) compression: Enable gzip compression for output stream destination: Output destination (stdout or file) bufferSize: Application-level output buffer size in bytes compressionLevel: zlib compression level (0..9) compressionThreads: Requested compression threads. If <tt class="docutils literal"><span class="pre"><span class="Operator">&gt;</span> <span class="DecNumber">1</span></span></tt>, the writer attempts to use <tt class="docutils literal"><span class="pre"><span class="Identifier">pigz</span></span></tt> for file destinations and gracefully falls back to built-in zlib compression when <tt class="docutils literal"><span class="pre"><span class="Identifier">pigz</span></span></tt> is not available or cannot be started. fastaWidth: FASTA sequence line width (used only in FASTA mode)</p>
 <p>Returns: Initialized <tt class="docutils literal"><span class="pre"><span class="Identifier">FastxWriter</span></span></tt></p>
 <p>Raises: IOError: If destination stream cannot be opened ValueError: If configuration values are invalid</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L272" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L272" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L327" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L327" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -326,8 +330,8 @@
 <p>Args: path: Output file path</p>
 <p>Returns: <tt class="docutils literal"><span class="pre"><span class="Identifier">FastxDestination</span><span class="Punctuation">(</span><span class="Identifier">kind</span><span class="Punctuation">:</span> <span class="Identifier">fxdFile</span><span class="Punctuation">,</span> <span class="Identifier">path</span><span class="Punctuation">:</span> <span class="Identifier">path</span><span class="Punctuation">)</span></span></tt></p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L88" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L88" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L93" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L93" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -335,15 +339,15 @@
 </div>
 <div id="flush-procs-all">
   <div id="flush,FastxWriter">
-  <dt><pre><span class="Keyword">proc</span> <a href="#flush%2CFastxWriter"><span class="Identifier">flush</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
-                                 <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#flush%2CFastxWriter"><span class="Identifier">flush</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span>
+                                 <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Flush pending buffered bytes to the destination stream.</p>
 <p>Notes: This writes the current application buffer. For gzip streams, final trailer bytes are emitted during <tt class="docutils literal"><span class="pre"><span class="Identifier">close</span></span></tt>.</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L137" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L137" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L149" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L149" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -357,8 +361,8 @@
     <p>Create a stdout destination descriptor.</p>
 <p>Returns: <tt class="docutils literal"><span class="pre"><span class="Identifier">FastxDestination</span><span class="Punctuation">(</span><span class="Identifier">kind</span><span class="Punctuation">:</span> <span class="Identifier">fxdStdout</span><span class="Punctuation">)</span></span></tt></p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L81" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L81" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L86" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L86" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -368,28 +372,28 @@
   <div id="writeRecord,FastxWriter,string,string,string,string">
   <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2Cstring%2Cstring%2Cstring%2Cstring"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">name</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">sequence</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
                  <span class="Identifier">quality</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span> <span class="Identifier">comment</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">)</span> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Convenience overload to write from scalar fields.</p>
 <p>Args: w: Writer instance name: Record identifier sequence: Sequence string quality: FASTQ quality string (required for FASTQ mode) comment: Optional header comment</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L214" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L214" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L229" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L229" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
 <div id="writeRecord,FastxWriter,FQRecord">
   <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2CFQRecord"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">record</span><span class="Other">:</span> <a href="seqtypes.html#FQRecord"><span class="Identifier">FQRecord</span></a><span class="Other">)</span> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Append one record to the writer.</p>
 <p>Args: w: Writer instance record: Record to write</p>
 <p>Raises: IOError: If the writer is closed or I/O fails ValueError: If record validation fails for selected format</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L193" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L193" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L208" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L208" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -405,7 +409,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 17:56:14 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-02-27 22:31:17 UTC</small>
       </div>
     </div>
   </div>
