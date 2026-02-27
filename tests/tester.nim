@@ -455,7 +455,8 @@ test "fastxWriter gzip FASTQ":
     compression = true,
     destination = fileDestination(outPath),
     bufferSize = 32,
-    compressionLevel = 6
+    compressionLevel = 6,
+    compressionThreads = 2
   )
   defer:
     if w.isOpen:
