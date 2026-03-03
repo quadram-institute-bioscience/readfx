@@ -51,6 +51,7 @@ for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
 ## Documentation
 
 - [Methods](METHODS.md) - All available procedures and iterators
+- [Choosing a Parser](choosing-parser.md) - Practical recommendations by workload and performance needs
 - [Data Structures](DATA_STRUCTURE.md) - Type definitions (`FQRecord`, `FQPair`, `SeqComp`, ...)
 - [Parsing Methods](PARSING.md) - Comparison of `readFQ`, `readFQPtr`, `readFastx`, `readFQPair`
 - [Sequence Utilities](FQRECORD_UTILS.md) - Sequence manipulation functions
