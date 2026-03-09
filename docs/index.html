@@ -76,9 +76,10 @@
       <span class="feature-icon">🔀</span>
       <div class="feature-title">Paired-end reads</div>
       <div class="feature-desc">
-        <code>readFQPair</code> reads two FASTQ files in lockstep,
-        yielding an <code>FQPair</code> record for each mate pair.
-        Optional name validation catches mismatched files.
+        <code>readFQPair</code> and <code>readFQPairPtr</code> read two FASTQ
+        files in lockstep, yielding <code>FQPair</code> or
+        <code>FQPairPtr</code> records. Optional name validation catches
+        mismatched files.
       </div>
     </div>
 
@@ -104,11 +105,12 @@
 
     <div class="feature-card">
       <span class="feature-icon">🎛️</span>
-      <div class="feature-title">Three parsing APIs</div>
+      <div class="feature-title">Flexible parsing APIs</div>
       <div class="feature-desc">
         Choose the right tradeoff: string-based convenience
         (<code>readFQ</code>), pointer-speed (<code>readFQPtr</code>),
-        or low-level control (<code>readFastx</code>).
+        low-level control (<code>readFastx</code>), and paired-end
+        lockstep iterators.
       </div>
     </div>
 
@@ -144,7 +146,11 @@ for record in readFQPtr("sample.fastq.gz"):
 
 # --- Paired-end reads ---
 for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
-  echo "R1: ", pair.read1.name, "  R2: ", pair.read2.name</code></pre>
+  echo "R1: ", pair.read1.name, "  R2: ", pair.read2.name
+
+# --- Paired-end pointer mode (zero-copy) ---
+for pair in readFQPairPtr("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
+  echo $cast[cstring](pair.read1.sequence), " | ", $cast[cstring](pair.read2.sequence)</code></pre>
       </div>
     </div>
 
@@ -197,6 +203,15 @@ for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
         </div>
       </div>
 
+      <div class="api-card">
+        <div class="api-card-name">readFQPairPtr</div>
+        <span class="api-card-tag tag-yellow">Paired-end Fastest</span>
+        <div class="api-card-desc">
+          Reads R1 &amp; R2 in lockstep. Yields reused pointer-based
+          <code>FQPairPtr</code> records with optional name validation.
+        </div>
+      </div>
+
     </div>
     <a href="parsing.html" class="btn btn-outline" style="margin-top: 0.5rem;">Compare parsers in depth →</a>
   </div>
@@ -222,7 +237,7 @@ for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
       <span class="feature-icon">⚙️</span>
       <div class="feature-title">Parsing Methods</div>
       <div class="feature-desc">
-        Deep-dive into the four iterators, when to use each,
+        Deep-dive into the five iterators, when to use each,
         and the performance trade-offs involved.
       </div>
     </a>
@@ -231,7 +246,7 @@ for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
       <span class="feature-icon">🗂️</span>
       <div class="feature-title">Data Structures</div>
       <div class="feature-desc">
-        <code>FQRecord</code>, <code>FQRecordPtr</code>, <code>FQPair</code>,
+        <code>FQRecord</code>, <code>FQRecordPtr</code>, <code>FQPair</code>, <code>FQPairPtr</code>,
         <code>SeqComp</code>, <code>Bufio</code>, <code>Interval</code> —
         all types explained.
       </div>

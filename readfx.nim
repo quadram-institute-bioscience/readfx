@@ -109,6 +109,19 @@ proc openGzForRead(path: string): GzFile =
     if result == nil:
       raise newException(IOError, "Cannot open file: " & path)
 
+proc cstrOrEmpty(p: ptr char): string {.inline.} =
+  if p.isNil:
+    ""
+  else:
+    $cast[cstring](p)
+
+proc normalizePairName(name: string, mate: int): string {.inline.} =
+  result = name
+  if mate == 1 and (result.endsWith("/1") or result.endsWith(" 1")):
+    result = result[0..^3]
+  elif mate == 2 and (result.endsWith("/2") or result.endsWith(" 2")):
+    result = result[0..^3]
+
 ## Iterator for reading FASTQ files, returning pointers to record data
 ##
 ## Note: The pointers are reused between iterations, so don't store them.
@@ -171,12 +184,87 @@ iterator readFQPtr*(path: string): FQRecordPtr =
 iterator readFQ*(path: string): FQRecord =
   var result: FQRecord  # 'result' not implicit in iterators
   for rec in readFQPtr(path):
-    # Explicitly convert ptr char to string with proper nil checks
-    result.name = if rec.name.isNil: "" else: $cast[cstring](rec.name)
-    result.comment = if rec.comment.isNil: "" else: $cast[cstring](rec.comment)
-    result.sequence = if rec.sequence.isNil: "" else: $cast[cstring](rec.sequence)
-    result.quality = if rec.quality.isNil: "" else: $cast[cstring](rec.quality)
+    result.name = cstrOrEmpty(rec.name)
+    result.comment = cstrOrEmpty(rec.comment)
+    result.sequence = cstrOrEmpty(rec.sequence)
+    result.quality = cstrOrEmpty(rec.quality)
     yield result
+
+## Iterator for reading paired-end FASTQ files synchronously with pointers
+##
+## Reads two FASTQ files in parallel, yielding pairs of corresponding records.
+## Pointer fields are reused between iterations; convert to strings if data
+## must be retained after the next `yield`.
+##
+## Args:
+##   path1: Path to the first FASTQ file (R1, forward reads)
+##   path2: Path to the second FASTQ file (R2, reverse reads)
+##   checkNames: Whether to verify that read names match (default: false)
+##
+## Returns:
+##   An iterator yielding FQPairPtr objects with synchronized reads
+##
+## Raises:
+##   IOError: If files cannot be opened or have mismatched lengths
+##   ValueError: If checkNames is true and read names don't match
+iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false): FQPairPtr =
+  var fp1, fp2: GzFile
+
+  fp1 = openGzForRead(path1)
+
+  if path2 == "-":
+    discard gzclose(fp1)
+    raise newException(IOError, "Cannot use stdin for both paired files")
+  else:
+    fp2 = gzopen(path2, "r")
+  if fp2 == nil:
+    discard gzclose(fp1)
+    raise newException(IOError, "Cannot open file: " & path2)
+
+  let rec1 = kseq_init(fp1)
+  let rec2 = kseq_init(fp2)
+  var pair: FQPairPtr
+  var count = 0
+
+  try:
+    while true:
+      let ret1 = kseq_read(rec1)
+      let ret2 = kseq_read(rec2)
+
+      if ret1 < 0 and ret2 < 0:
+        break
+
+      if ret1 < 0:
+        raise newException(IOError, "File " & path1 & " ended prematurely after " & $count & " sequences")
+      if ret2 < 0:
+        raise newException(IOError, "File " & path2 & " ended prematurely after " & $count & " sequences")
+
+      count += 1
+
+      pair.read1.name = rec1.name.s
+      pair.read1.comment = rec1.comment.s
+      pair.read1.sequence = rec1.seq.s
+      pair.read1.quality = rec1.qual.s
+
+      pair.read2.name = rec2.name.s
+      pair.read2.comment = rec2.comment.s
+      pair.read2.sequence = rec2.seq.s
+      pair.read2.quality = rec2.qual.s
+
+      if checkNames:
+        let rawName1 = cstrOrEmpty(pair.read1.name)
+        let rawName2 = cstrOrEmpty(pair.read2.name)
+        let name1 = normalizePairName(rawName1, 1)
+        let name2 = normalizePairName(rawName2, 2)
+        if name1 != name2:
+          raise newException(ValueError, "Sequence name mismatch at record " & $count & ": '" &
+                           rawName1 & "' != '" & rawName2 & "'")
+
+      yield pair
+
+  finally:
+    discard gzclose(fp1)
+    discard gzclose(fp2)
 
 ## Iterator for reading paired-end FASTQ files synchronously
 ##
@@ -204,78 +292,18 @@ iterator readFQ*(path: string): FQRecord =
 ##   processReadPair(pair.read1.sequence, pair.read2.sequence)
 ## ```
 iterator readFQPair*(path1: string, path2: string, checkNames: bool = false): FQPair =
-  var fp1, fp2: GzFile
-  
-  # Open first file
-  fp1 = openGzForRead(path1)
-  
-  # Open second file  
-  if path2 == "-":
-    raise newException(IOError, "Cannot use stdin for both paired files")
-  else:
-    fp2 = gzopen(path2, "r")
-  if fp2 == nil:
-    discard gzclose(fp1)
-    raise newException(IOError, "Cannot open file: " & path2)
-  
-  let rec1 = kseq_init(fp1)
-  let rec2 = kseq_init(fp2)
   var pair: FQPair
-  var count = 0
-  
-  try:
-    while true:
-      let ret1 = kseq_read(rec1)
-      let ret2 = kseq_read(rec2)
-      
-      # Check if both files ended simultaneously
-      if ret1 < 0 and ret2 < 0:
-        break
-      
-      # Check for premature end of either file
-      if ret1 < 0:
-        raise newException(IOError, "File " & path1 & " ended prematurely after " & $count & " sequences")
-      if ret2 < 0:
-        raise newException(IOError, "File " & path2 & " ended prematurely after " & $count & " sequences")
-      
-      count += 1
-      
-      # Convert records to FQRecord format
-      pair.read1.name = if rec1.name.s.isNil: "" else: $cast[cstring](rec1.name.s)
-      pair.read1.comment = if rec1.comment.s.isNil: "" else: $cast[cstring](rec1.comment.s)
-      pair.read1.sequence = if rec1.seq.s.isNil: "" else: $cast[cstring](rec1.seq.s)
-      pair.read1.quality = if rec1.qual.s.isNil: "" else: $cast[cstring](rec1.qual.s)
-      
-      pair.read2.name = if rec2.name.s.isNil: "" else: $cast[cstring](rec2.name.s)
-      pair.read2.comment = if rec2.comment.s.isNil: "" else: $cast[cstring](rec2.comment.s)
-      pair.read2.sequence = if rec2.seq.s.isNil: "" else: $cast[cstring](rec2.seq.s)
-      pair.read2.quality = if rec2.qual.s.isNil: "" else: $cast[cstring](rec2.qual.s)
-      
-      # Optional name checking
-      if checkNames:
-        var name1 = pair.read1.name
-        var name2 = pair.read2.name
-        
-        # Remove common suffixes like /1, /2, or trailing spaces
-        if name1.endsWith("/1"):
-          name1 = name1[0..^3]
-        elif name1.endsWith(" 1"):
-          name1 = name1[0..^3]
-        
-        if name2.endsWith("/2"):
-          name2 = name2[0..^3]
-        elif name2.endsWith(" 2"):
-          name2 = name2[0..^3]
-        
-        if name1 != name2:
-          raise newException(ValueError, "Sequence name mismatch at record " & $count & ": '" & 
-                           pair.read1.name & "' != '" & pair.read2.name & "'")
-      
-      yield pair
-      
-  finally:
-    discard gzclose(fp1)
-    discard gzclose(fp2)
+  for rec in readFQPairPtr(path1, path2, checkNames = checkNames):
+    pair.read1.name = cstrOrEmpty(rec.read1.name)
+    pair.read1.comment = cstrOrEmpty(rec.read1.comment)
+    pair.read1.sequence = cstrOrEmpty(rec.read1.sequence)
+    pair.read1.quality = cstrOrEmpty(rec.read1.quality)
+
+    pair.read2.name = cstrOrEmpty(rec.read2.name)
+    pair.read2.comment = cstrOrEmpty(rec.read2.comment)
+    pair.read2.sequence = cstrOrEmpty(rec.read2.sequence)
+    pair.read2.quality = cstrOrEmpty(rec.read2.quality)
+    yield pair
 
 ## Formats a sequence record as a FASTA or FASTQ string
 ##
@@ -334,11 +362,10 @@ proc `$`*(rec: FQRecord): string =
 ## Returns:
 ##   Formatted FASTA/FASTQ string
 proc `$`*(rec: FQRecordPtr): string =
-  # Explicitly convert ptr char to string first
-  let nameStr = if rec.name.isNil: "" else: $cast[cstring](rec.name)
-  let commentStr = if rec.comment.isNil: "" else: $cast[cstring](rec.comment)
-  let sequenceStr = if rec.sequence.isNil: "" else: $cast[cstring](rec.sequence)
-  let qualityStr = if rec.quality.isNil: "" else: $cast[cstring](rec.quality)
+  let nameStr = cstrOrEmpty(rec.name)
+  let commentStr = cstrOrEmpty(rec.comment)
+  let sequenceStr = cstrOrEmpty(rec.sequence)
+  let qualityStr = cstrOrEmpty(rec.quality)
   
   return fqfmt(nameStr, commentStr, sequenceStr, qualityStr)
 

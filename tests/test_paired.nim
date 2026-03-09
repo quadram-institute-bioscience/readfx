@@ -1,7 +1,75 @@
 import unittest, ../readfx
 
+proc cstrOrEmpty(p: ptr char): string =
+  if p.isNil:
+    ""
+  else:
+    $cast[cstring](p)
+
 suite "Paired-end reading tests":
-  
+
+  test "readFQPairPtr basic functionality (uncompressed synthetic data)":
+    var count = 0
+    for pair in readFQPairPtr("./tests/test_R1.fq", "./tests/test_R2.fq"):
+      count += 1
+      let seq1 = cstrOrEmpty(pair.read1.sequence)
+      let seq2 = cstrOrEmpty(pair.read2.sequence)
+      let qual1 = cstrOrEmpty(pair.read1.quality)
+      let qual2 = cstrOrEmpty(pair.read2.quality)
+      check seq1.len + seq2.len == 10
+      check cstrOrEmpty(pair.read1.name).len > 0
+      check cstrOrEmpty(pair.read2.name).len > 0
+      check seq1.len > 0
+      check seq2.len > 0
+      check qual1.len > 0
+      check qual2.len > 0
+      check seq1.len == qual1.len
+      check seq2.len == qual2.len
+    check count > 0
+
+  test "readFQPairPtr basic functionality":
+    var count = 0
+    var totalLen1, totalLen2 = 0
+
+    for pair in readFQPairPtr("./tests/illumina_1.fq.gz", "./tests/illumina_2.fq.gz"):
+      count += 1
+      let seq1 = cstrOrEmpty(pair.read1.sequence)
+      let seq2 = cstrOrEmpty(pair.read2.sequence)
+      let qual1 = cstrOrEmpty(pair.read1.quality)
+      let qual2 = cstrOrEmpty(pair.read2.quality)
+      totalLen1 += seq1.len
+      totalLen2 += seq2.len
+
+      check cstrOrEmpty(pair.read1.name).len > 0
+      check cstrOrEmpty(pair.read2.name).len > 0
+      check seq1.len > 0
+      check seq2.len > 0
+      check qual1.len > 0
+      check qual2.len > 0
+      check seq1.len == qual1.len
+      check seq2.len == qual2.len
+
+    check count == 7
+    check totalLen1 > 0
+    check totalLen2 > 0
+
+  test "readFQPairPtr name checking":
+    var count = 0
+    for pair in readFQPairPtr("./tests/illumina_1.fq.gz", "./tests/illumina_2.fq.gz", checkNames = true):
+      discard pair
+      count += 1
+    check count == 7
+
+  test "readFQPairPtr error handling for non-existent files":
+    expect IOError:
+      for pair in readFQPairPtr("./tests/nonexistent1.fq", "./tests/nonexistent2.fq"):
+        discard pair
+
+  test "readFQPairPtr error handling for single non-existent file":
+    expect IOError:
+      for pair in readFQPairPtr("./tests/illumina_1.fq.gz", "./tests/nonexistent.fq"):
+        discard pair
+
   test "readFQPair basic functionality (uncompressed synthetic data)":
     var count = 0
     var totalLen1, totalLen2 = 0

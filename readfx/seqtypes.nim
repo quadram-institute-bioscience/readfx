@@ -35,6 +35,27 @@ type
     sequence*: ptr char  ## Nucleotide sequence (null-terminated)
     quality*: ptr char   ## Optional quality scores (null-terminated, empty for FASTA)
 
+## FQPairPtr
+## ==========================================================
+##
+## **Pointer-based paired-end sequence record**
+##
+## Contains two FQRecordPtr objects representing the forward and reverse reads
+## from paired-end sequencing. Like FQRecordPtr, pointers are reused between
+## iterations and should not be stored after advancing the iterator.
+##
+## Example:
+##
+## ```nim
+## for pair in readFQPairPtr("sample_1.fastq.gz", "sample_2.fastq.gz"):
+##   echo $cast[cstring](pair.read1.sequence)
+##   echo $cast[cstring](pair.read2.sequence)
+## ```
+type
+  FQPairPtr* = object
+    read1*: FQRecordPtr  ## Forward read (R1, pointer-based)
+    read2*: FQRecordPtr  ## Reverse read (R2, pointer-based)
+
 
 ## FQRecord
 ## ==========================================================
