@@ -14,12 +14,16 @@ on:
       - "docs/**"
 
 jobs:
-  interleaved-benchmark:
-    name: Interleaved throughput guard
+  parser-benchmark:
+    name: Parser throughput guard
     runs-on: ubuntu-latest
     env:
-      BENCH_LOOPS: "200000"
-      MIN_RELATIVE_SPEED: "0.90"
+      BENCH_LOOPS: "1000"
+      BENCH_REPEATS: "7"
+      MIN_SINGLE_PTR_RATIO: "0.90"
+      MIN_FASTX_RATIO: "0.90"
+      MIN_PAIRED_PTR_RATIO: "0.90"
+      MIN_INTERLEAVED_PTR_RATIO: "0.90"
 
     steps:
       - uses: actions/checkout@v4
@@ -32,14 +36,42 @@ jobs:
       - name: Install dependencies
         run: nimble install -y
 
-      - name: Build interleaved benchmark
+      - name: Build smoke benchmark
         run: |
           nim c --nimcache:/tmp/readfx_bench_cache -d:release --mm:orc --threads:on \
-            -o:benchmark/interleaved_pair_bench benchmark/interleaved_pair_bench.nim
+            -o:benchmark/smoke_bench benchmark/smoke_bench.nim
+
+      - name: Prepare interleaved benchmark input
+        run: |
+          python3 - <<'PY'
+          import gzip
+          from pathlib import Path
+
+          out_path = Path("/tmp/readfx_interleaved_illumina.fastq")
+          with gzip.open("tests/illumina_1.fq.gz", "rt") as r1, \
+               gzip.open("tests/illumina_2.fq.gz", "rt") as r2, \
+               out_path.open("w") as out:
+            while True:
+              block1 = [r1.readline() for _ in range(4)]
+              block2 = [r2.readline() for _ in range(4)]
+              if not block1[0] and not block2[0]:
+                break
+              if not block1[0] or not block2[0]:
+                raise SystemExit("paired fixture ended at different lengths")
+              out.writelines(block1)
+              out.writelines(block2)
+          print(out_path)
+          PY
 
       - name: Run benchmark
         run: |
-          ./benchmark/interleaved_pair_bench --loops="${BENCH_LOOPS}" > benchmark.tsv
+          ./benchmark/smoke_bench \
+            --single-path="tests/illumina_1.fq.gz" \
+            --pair-path1="tests/illumina_1.fq.gz" \
+            --pair-path2="tests/illumina_2.fq.gz" \
+            --interleaved-path="/tmp/readfx_interleaved_illumina.fastq" \
+            --loops="${BENCH_LOOPS}" \
+            --repeats="${BENCH_REPEATS}" > benchmark.tsv
           cat benchmark.tsv
 
       - name: Check regression budget
@@ -49,39 +81,70 @@ jobs:
           import os
           import sys
 
-          min_relative = float(os.environ["MIN_RELATIVE_SPEED"])
+          min_single = float(os.environ["MIN_SINGLE_PTR_RATIO"])
+          min_fastx = float(os.environ["MIN_FASTX_RATIO"])
+          min_paired = float(os.environ["MIN_PAIRED_PTR_RATIO"])
+          min_interleaved = float(os.environ["MIN_INTERLEAVED_PTR_RATIO"])
           rows = {}
           with open("benchmark.tsv", newline="") as fh:
             reader = csv.DictReader(fh, delimiter="\t")
             for row in reader:
               rows[row["name"]] = row
 
-          required = ["readFQInterleavedPairPtr", "readFQ-string-regroup"]
+          required = [
+            "readFQPtr",
+            "readFQ",
+            "readFastx",
+            "readFQPairPtr",
+            "readFQPair",
+            "readFQInterleavedPairPtr",
+            "readFQ-string-regroup",
+          ]
           missing = [name for name in required if name not in rows]
           if missing:
             print(f"Missing benchmark rows: {', '.join(missing)}", file=sys.stderr)
             sys.exit(1)
 
-          interleaved = float(rows["readFQInterleavedPairPtr"]["pairs_per_sec"])
-          string_regroup = float(rows["readFQ-string-regroup"]["pairs_per_sec"])
-          ratio = interleaved / string_regroup if string_regroup else 0.0
+          def units_per_sec(name: str) -> float:
+            return float(rows[name]["units_per_sec"])
 
-          print(f"Interleaved pairs/sec: {interleaved:.2f}")
-          print(f"String regroup pairs/sec: {string_regroup:.2f}")
-          print(f"Relative speed: {ratio:.3f}")
+          checks = [
+            (
+              "single pointer",
+              units_per_sec("readFQPtr") / units_per_sec("readFQ"),
+              min_single,
+            ),
+            (
+              "single fastx",
+              units_per_sec("readFastx") / units_per_sec("readFQ"),
+              min_fastx,
+            ),
+            (
+              "paired pointer",
+              units_per_sec("readFQPairPtr") / units_per_sec("readFQPair"),
+              min_paired,
+            ),
+            (
+              "interleaved pointer",
+              units_per_sec("readFQInterleavedPairPtr") / units_per_sec("readFQ-string-regroup"),
+              min_interleaved,
+            ),
+          ]
 
-          if ratio < min_relative:
-            print(
-              f"Benchmark regression: relative speed {ratio:.3f} is below the threshold {min_relative:.3f}",
-              file=sys.stderr,
-            )
-            sys.exit(1)
+          for label, ratio, threshold in checks:
+            print(f"{label} ratio: {ratio:.3f} (threshold {threshold:.3f})")
+            if ratio < threshold:
+              print(
+                f"Benchmark regression: {label} ratio {ratio:.3f} is below the threshold {threshold:.3f}",
+                file=sys.stderr,
+              )
+              sys.exit(1)
           PY
 
       - name: Write summary
         run: |
           {
-            echo "## Benchmark Guard"
+            echo "## Parser Benchmark Guard"
             echo
             echo '```tsv'
             cat benchmark.tsv
