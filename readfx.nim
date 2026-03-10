@@ -122,10 +122,62 @@ proc normalizePairName(name: string, mate: int): string {.inline.} =
   elif mate == 2 and (result.endsWith("/2") or result.endsWith(" 2")):
     result = result[0..^3]
 
+proc ptrFieldLen(field: kstring_t): int {.inline.} =
+  if field.s.isNil:
+    0
+  else:
+    field.l
+
+proc setRecordPtrFields(
+    record: var FQRecordPtr,
+    name: ptr char, nameLen: int,
+    comment: ptr char, commentLen: int,
+    sequence: ptr char, sequenceLen: int,
+    quality: ptr char, qualityLen: int
+  ) {.inline.} =
+  record.name = name
+  record.nameLen = nameLen
+  record.comment = comment
+  record.commentLen = commentLen
+  record.sequence = sequence
+  record.sequenceLen = sequenceLen
+  record.quality = quality
+  record.qualityLen = qualityLen
+
+proc setRecordPtrFields(record: var FQRecordPtr, rec: ptr kseq_t) {.inline.} =
+  setRecordPtrFields(
+    record,
+    rec.name.s, ptrFieldLen(rec.name),
+    rec.comment.s, ptrFieldLen(rec.comment),
+    rec.seq.s, ptrFieldLen(rec.seq),
+    rec.qual.s, ptrFieldLen(rec.qual)
+  )
+
+proc copyScratchField(dst: var string, src: ptr char, len: int): ptr char =
+  if src.isNil:
+    dst.setLen(0)
+    return nil
+
+  dst.setLen(len + 1)
+  if len > 0:
+    copyMem(addr dst[0], src, len)
+  dst[len] = '\0'
+  addr dst[0]
+
+proc requireFastqRecord(rec: ptr kseq_t, path: string, pairNumber: int, mate: int) =
+  if rec.qual.s.isNil:
+    raise newException(
+      ValueError,
+      "readFQInterleavedPairPtr requires FASTQ input; missing qualities at pair " &
+      $pairNumber & ", mate " & $mate & " in " & path
+    )
+
 ## Iterator for reading FASTQ files, returning pointers to record data
 ##
 ## Note: The pointers are reused between iterations, so don't store them.
 ## For stdin input, use "-" as the path parameter.
+## Cached lengths are available on each `FQRecordPtr` field and exclude the
+## trailing NUL terminator.
 ##
 ## Args:
 ##   path: Path to the FASTQ file (supports gzipped files)
@@ -153,10 +205,7 @@ iterator readFQPtr*(path: string): FQRecordPtr =
   while true:
     if kseq_read(rec) < 0:
       break
-    result.name = rec.name.s
-    result.comment = rec.comment.s
-    result.sequence = rec.seq.s
-    result.quality = rec.qual.s
+    result.setRecordPtrFields(rec)
     yield result
   discard gzclose(fp)
 
@@ -195,6 +244,7 @@ iterator readFQ*(path: string): FQRecord =
 ## Reads two FASTQ files in parallel, yielding pairs of corresponding records.
 ## Pointer fields are reused between iterations; convert to strings if data
 ## must be retained after the next `yield`.
+## Cached lengths are available on both `read1` and `read2`.
 ##
 ## Args:
 ##   path1: Path to the first FASTQ file (R1, forward reads)
@@ -241,15 +291,8 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
 
       count += 1
 
-      pair.read1.name = rec1.name.s
-      pair.read1.comment = rec1.comment.s
-      pair.read1.sequence = rec1.seq.s
-      pair.read1.quality = rec1.qual.s
-
-      pair.read2.name = rec2.name.s
-      pair.read2.comment = rec2.comment.s
-      pair.read2.sequence = rec2.seq.s
-      pair.read2.quality = rec2.qual.s
+      pair.read1.setRecordPtrFields(rec1)
+      pair.read2.setRecordPtrFields(rec2)
 
       if checkNames:
         let rawName1 = cstrOrEmpty(pair.read1.name)
@@ -265,6 +308,79 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
   finally:
     discard gzclose(fp1)
     discard gzclose(fp2)
+
+## Iterator for reading interleaved paired-end FASTQ files with pointers.
+##
+## Reads one interleaved FASTQ stream and yields each adjacent R1/R2 record pair
+## as `FQPairPtr`. `read1` is copied into scratch storage so that both records
+## remain valid until the next `yield`. Scratch-backed pointers are always
+## NUL-terminated.
+##
+## Args:
+##   path: Path to the interleaved FASTQ file (supports gzipped files; `"-"`
+##     reads from stdin)
+##   checkNames: Whether to verify that read names match after mate suffix
+##     normalization (default: false)
+##
+## Returns:
+##   An iterator yielding `FQPairPtr` objects with cached field lengths
+##
+## Raises:
+##   IOError: If the input stream cannot be opened or ends with an incomplete pair
+##   ValueError: If input is not FASTQ or `checkNames` detects a mismatch
+iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPairPtr =
+  let fp = openGzForRead(path)
+  let rec = kseq_init(fp)
+  var pair: FQPairPtr
+  var pairCount = 0
+
+  var read1NameScratch = ""
+  var read1CommentScratch = ""
+  var read1SequenceScratch = ""
+  var read1QualityScratch = ""
+
+  try:
+    while true:
+      let ret1 = kseq_read(rec)
+      if ret1 < 0:
+        break
+
+      let pairNumber = pairCount + 1
+      requireFastqRecord(rec, path, pairNumber, 1)
+
+      let read1Name = copyScratchField(read1NameScratch, rec.name.s, ptrFieldLen(rec.name))
+      let read1Comment = copyScratchField(read1CommentScratch, rec.comment.s, ptrFieldLen(rec.comment))
+      let read1Sequence = copyScratchField(read1SequenceScratch, rec.seq.s, ptrFieldLen(rec.seq))
+      let read1Quality = copyScratchField(read1QualityScratch, rec.qual.s, ptrFieldLen(rec.qual))
+      pair.read1.setRecordPtrFields(
+        read1Name, ptrFieldLen(rec.name),
+        read1Comment, ptrFieldLen(rec.comment),
+        read1Sequence, ptrFieldLen(rec.seq),
+        read1Quality, ptrFieldLen(rec.qual)
+      )
+
+      let ret2 = kseq_read(rec)
+      if ret2 < 0:
+        raise newException(IOError, "Interleaved file " & path &
+          " ended prematurely after " & $pairCount & " complete pairs")
+
+      requireFastqRecord(rec, path, pairNumber, 2)
+      pair.read2.setRecordPtrFields(rec)
+
+      if checkNames:
+        let rawName1 = cstrOrEmpty(pair.read1.name)
+        let rawName2 = cstrOrEmpty(pair.read2.name)
+        let name1 = normalizePairName(rawName1, 1)
+        let name2 = normalizePairName(rawName2, 2)
+        if name1 != name2:
+          raise newException(ValueError, "Sequence name mismatch at record " & $pairNumber & ": '" &
+                           rawName1 & "' != '" & rawName2 & "'")
+
+      pairCount = pairNumber
+      yield pair
+
+  finally:
+    discard gzclose(fp)
 
 ## Iterator for reading paired-end FASTQ files synchronously
 ##

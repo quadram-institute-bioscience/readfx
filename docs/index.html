@@ -34,7 +34,7 @@
   <p class="hero-tagline">
     High-performance FASTA&nbsp;&amp;&nbsp;FASTQ parsing for Nim.
     Wraps Heng&nbsp;Li's battle-tested <code>kseq.h</code> and
-    adds a native Nim parser, gzip support, paired-end reads,
+    adds a native Nim parser, gzip support, paired-end and interleaved pair reads,
     and a rich suite of sequence utilities.
   </p>
   <div class="hero-actions">
@@ -76,10 +76,10 @@
       <span class="feature-icon">🔀</span>
       <div class="feature-title">Paired-end reads</div>
       <div class="feature-desc">
-        <code>readFQPair</code> and <code>readFQPairPtr</code> read two FASTQ
-        files in lockstep, yielding <code>FQPair</code> or
-        <code>FQPairPtr</code> records. Optional name validation catches
-        mismatched files.
+        <code>readFQPair</code>, <code>readFQPairPtr</code>, and
+        <code>readFQInterleavedPairPtr</code> cover both two-file and
+        single-stream paired FASTQ workflows, with optional mate-name
+        validation.
       </div>
     </div>
 
@@ -109,8 +109,9 @@
       <div class="feature-desc">
         Choose the right tradeoff: string-based convenience
         (<code>readFQ</code>), pointer-speed (<code>readFQPtr</code>),
-        low-level control (<code>readFastx</code>), and paired-end
-        lockstep iterators.
+        low-level control (<code>readFastx</code>), separate-file pair
+        iterators, and interleaved zero-copy pair iteration with cached
+        field lengths.
       </div>
     </div>
 
@@ -142,7 +143,7 @@ for record in readFQ("sample.fastq.gz"):
 
 # --- High-throughput: pointer-based (no string copies) ---
 for record in readFQPtr("sample.fastq.gz"):
-  echo $record.name, ": ", len($record.sequence)
+  echo $record.name, ": ", record.sequenceLen
 
 # --- Paired-end reads ---
 for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
@@ -150,7 +151,11 @@ for pair in readFQPair("R1.fastq.gz", "R2.fastq.gz"):
 
 # --- Paired-end pointer mode (zero-copy) ---
 for pair in readFQPairPtr("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
-  echo $cast[cstring](pair.read1.sequence), " | ", $cast[cstring](pair.read2.sequence)</code></pre>
+  echo pair.read1.sequenceLen + pair.read2.sequenceLen
+
+# --- Interleaved paired-end pointer mode ---
+for pair in readFQInterleavedPairPtr("reads.interleaved.fastq.gz", checkNames = true):
+  echo pair.read1.sequenceLen + pair.read2.sequenceLen</code></pre>
       </div>
     </div>
 
@@ -212,6 +217,16 @@ for pair in readFQPairPtr("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
         </div>
       </div>
 
+      <div class="api-card">
+        <div class="api-card-name">readFQInterleavedPairPtr</div>
+        <span class="api-card-tag tag-yellow">Interleaved Fastest</span>
+        <div class="api-card-desc">
+          Reads one interleaved FASTQ stream. Yields <code>FQPairPtr</code>
+          with scratch-backed <code>read1</code> pointers valid until the next
+          iterator advance.
+        </div>
+      </div>
+
     </div>
     <a href="parsing.html" class="btn btn-outline" style="margin-top: 0.5rem;">Compare parsers in depth →</a>
   </div>
@@ -237,7 +252,7 @@ for pair in readFQPairPtr("R1.fastq.gz", "R2.fastq.gz", checkNames = true):
       <span class="feature-icon">⚙️</span>
       <div class="feature-title">Parsing Methods</div>
       <div class="feature-desc">
-        Deep-dive into the five iterators, when to use each,
+        Deep-dive into the full parser family, when to use each,
         and the performance trade-offs involved.
       </div>
     </a>

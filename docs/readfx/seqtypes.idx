@@ -1,13 +1,15 @@
 nimTitle	seqtypes	readfx/seqtypes.html	module readfx/seqtypes		0
 nim	FQRecordPtr	readfx/seqtypes.html#FQRecordPtr	object FQRecordPtr		32
-nim	FQRecord	readfx/seqtypes.html#FQRecord	object FQRecord		69
-nim	FQPair	readfx/seqtypes.html#FQPair	object FQPair		94
-nim	SeqComp	readfx/seqtypes.html#SeqComp	object SeqComp		127
-nim	Forward	readfx/seqtypes.html#Forward	Strand.Forward		148
-nim	Reverse	readfx/seqtypes.html#Reverse	Strand.Reverse		148
-nim	Unknown	readfx/seqtypes.html#Unknown	Strand.Unknown		148
-nim	Strand	readfx/seqtypes.html#Strand	enum Strand		148
+nim	FQPairPtr	readfx/seqtypes.html#FQPairPtr	object FQPairPtr		59
+nim	FQRecord	readfx/seqtypes.html#FQRecord	object FQRecord		94
+nim	FQPair	readfx/seqtypes.html#FQPair	object FQPair		119
+nim	SeqComp	readfx/seqtypes.html#SeqComp	object SeqComp		152
+nim	Forward	readfx/seqtypes.html#Forward	Strand.Forward		173
+nim	Reverse	readfx/seqtypes.html#Reverse	Strand.Reverse		173
+nim	Unknown	readfx/seqtypes.html#Unknown	Strand.Unknown		173
+nim	Strand	readfx/seqtypes.html#Strand	enum Strand		173
 heading	FQRecordPtr	readfx/seqtypes.html#fqrecordptr	 FQRecordPtr		0
+heading	FQPairPtr	readfx/seqtypes.html#fqpairptr	 FQPairPtr		0
 heading	FQRecord	readfx/seqtypes.html#fqrecord	 FQRecord		0
 heading	FQPair	readfx/seqtypes.html#fqpair	 FQPair		0
 heading	SeqComp	readfx/seqtypes.html#seqcomp	 SeqComp		0

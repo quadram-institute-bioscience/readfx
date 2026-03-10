@@ -63,6 +63,16 @@ test "(2) readFQPtr missing file raises IOError":
     for rec in readFQPtr("./tests/nonexistent.fastq.gz"):
       discard rec
 
+test "(2) readFQPtr cached lengths":
+  var count = 0
+  for rec in readFQPtr("./tests/fastq_demo.fq"):
+    inc count
+    check rec.nameLen == cstrOrEmpty(rec.name).len
+    check rec.commentLen == cstrOrEmpty(rec.comment).len
+    check rec.sequenceLen == cstrOrEmpty(rec.sequence).len
+    check rec.qualityLen == cstrOrEmpty(rec.quality).len
+  check count > 0
+
 test "(2) readFQPtr '-' keeps stdin open":
   when defined(posix):
     var pipeFds: array[2, cint]

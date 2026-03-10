@@ -43,7 +43,7 @@ for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
 - FASTA and FASTQ format support (auto-detected)
 - Transparent gzip decompression
 - Stdin support via `"-"` as filename
-- Three parsing APIs with different performance/convenience tradeoffs
+- Multiple parsing APIs with different performance/convenience tradeoffs
 - Paired-end read support with optional name validation
 - Sequence utilities: reverse complement, GC content, quality trimming, subsequence extraction
 - IUPAC primer matching
@@ -52,8 +52,8 @@ for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
 
 - [Methods](METHODS.md) - All available procedures and iterators
 - [Choosing a Parser](choosing-parser.md) - Practical recommendations by workload and performance needs
-- [Data Structures](DATA_STRUCTURE.md) - Type definitions (`FQRecord`, `FQPair`, `SeqComp`, ...)
-- [Parsing Methods](PARSING.md) - Comparison of `readFQ`, `readFQPtr`, `readFastx`, `readFQPair`
+- [Data Structures](DATA_STRUCTURE.md) - Type definitions (`FQRecord`, `FQRecordPtr`, `FQPair`, `FQPairPtr`, `SeqComp`, ...)
+- [Parsing Methods](PARSING.md) - Comparison of `readFQ`, `readFQPtr`, `readFastx`, `readFQPair`, `readFQInterleavedPairPtr`
 - [Sequence Utilities](FQRECORD_UTILS.md) - Sequence manipulation functions
 - [Utility Functions Reference](UTILS.md) - Full utility function reference
 - [Repository Structure](REPO_STRUCTURE.md) - Project layout

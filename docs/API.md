@@ -8,9 +8,25 @@ Pointer-based record for high-performance streaming. Pointers are valid only dur
 ```nim
 type FQRecordPtr* = object
   name*: ptr char      # Sequence identifier
+  nameLen*: int        # Cached name length (excluding trailing NUL)
   comment*: ptr char   # Optional comment
+  commentLen*: int     # Cached comment length (excluding trailing NUL)
   sequence*: ptr char  # Nucleotide sequence
+  sequenceLen*: int    # Cached sequence length (excluding trailing NUL)
   quality*: ptr char   # Quality scores (nil for FASTA)
+  qualityLen*: int     # Cached quality length (excluding trailing NUL)
+```
+
+Nil pointers carry a cached length of `0`. Pointer fields are valid only until
+the next iterator advance.
+
+#### `FQPairPtr`
+Pointer-based paired-end record containing two `FQRecordPtr` objects.
+
+```nim
+type FQPairPtr* = object
+  read1*: FQRecordPtr
+  read2*: FQRecordPtr
 ```
 
 #### `FQRecord`
@@ -63,7 +79,22 @@ Yields `FQRecord` objects with string fields. Use `"-"` for stdin.
 ```nim
 iterator readFQPtr*(path: string): FQRecordPtr
 ```
-Yields pointer-based records. Faster than `readFQ` but pointers are reused on each iteration.
+Yields pointer-based records. Faster than `readFQ` but pointers are reused on each iteration. Cached lengths are populated on every record.
+
+#### `readFQPairPtr`
+```nim
+iterator readFQPairPtr*(path1, path2: string, checkNames: bool = false): FQPairPtr
+```
+Yields synchronized pointer-based paired-end records. Cached lengths are
+available on both mates.
+
+#### `readFQInterleavedPairPtr`
+```nim
+iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPairPtr
+```
+Yields pointer-based paired-end records from one interleaved FASTQ stream.
+`read1` is scratch-backed and both mates remain valid until the next iterator
+advance. FASTQ only. Raises `IOError` on incomplete trailing pairs.
 
 #### `readFQPair`
 ```nim

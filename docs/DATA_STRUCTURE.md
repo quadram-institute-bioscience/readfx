@@ -7,12 +7,37 @@ Pointer-based record for high-performance streaming via the `kseq` C library. Po
 ```nim
 type FQRecordPtr* = object
   name*: ptr char      # Sequence identifier (null-terminated)
+  nameLen*: int        # Name length in bytes (excluding trailing NUL)
   comment*: ptr char   # Optional description (null-terminated)
+  commentLen*: int     # Comment length in bytes (excluding trailing NUL)
   sequence*: ptr char  # Nucleotide sequence (null-terminated)
+  sequenceLen*: int    # Sequence length in bytes (excluding trailing NUL)
   quality*: ptr char   # Quality scores (null-terminated; nil for FASTA)
+  qualityLen*: int     # Quality length in bytes (excluding trailing NUL)
 ```
 
-Use with `readFQPtr`. To retain data beyond the current iteration, convert to string: `$record.name`.
+Use with `readFQPtr`, `readFQPairPtr`, or `readFQInterleavedPairPtr`. To retain
+data beyond the current iteration, convert to string: `$record.name`.
+
+- Cached lengths exclude the trailing NUL terminator.
+- Nil pointers carry length `0`.
+- Pointer fields are valid only until the next iterator advance.
+
+---
+
+## `FQPairPtr`
+
+Pointer-based paired-end record containing two `FQRecordPtr` objects. Yielded
+by `readFQPairPtr` and `readFQInterleavedPairPtr`.
+
+```nim
+type FQPairPtr* = object
+  read1*: FQRecordPtr   # Forward read (R1)
+  read2*: FQRecordPtr   # Reverse read (R2)
+```
+
+`readFQInterleavedPairPtr` uses scratch-backed storage for `read1`, so both
+`read1` and `read2` remain valid until the next `yield`.
 
 ---
 

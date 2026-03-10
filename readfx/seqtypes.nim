@@ -31,9 +31,13 @@
 type
   FQRecordPtr* = object
     name*: ptr char      ## Sequence name/identifier (null-terminated)
+    nameLen*: int        ## Sequence name length in bytes (excluding trailing NUL)
     comment*: ptr char   ## Optional sequence description/comment (null-terminated)
+    commentLen*: int     ## Comment length in bytes (excluding trailing NUL)
     sequence*: ptr char  ## Nucleotide sequence (null-terminated)
+    sequenceLen*: int    ## Sequence length in bytes (excluding trailing NUL)
     quality*: ptr char   ## Optional quality scores (null-terminated, empty for FASTA)
+    qualityLen*: int     ## Quality length in bytes (excluding trailing NUL)
 
 ## FQPairPtr
 ## ==========================================================
