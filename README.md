@@ -24,7 +24,7 @@ for record in readFQ("example.fastq"):
   
 # Using pointer-based version (more efficient, reuses memory)
 for record in readFQPtr("example.fastq.gz"):
-  echo $record.name, ": ", $record.sequence.len
+  echo $record.name, ": ", record.sequenceLen
   
 # Using the native Nim implementation
 var r: FQRecord
@@ -40,10 +40,18 @@ for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
 
 # Pointer-based paired-end iteration (zero-copy, pointers are reused)
 for pair in readFQPairPtr("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
-  let r1 = $cast[cstring](pair.read1.sequence)
-  let r2 = $cast[cstring](pair.read2.sequence)
-  echo "Pair length: ", r1.len + r2.len
+  echo "Pair length: ", pair.read1.sequenceLen + pair.read2.sequenceLen
+
+# Pointer-based interleaved paired-end iteration
+for pair in readFQInterleavedPairPtr("sample.interleaved.fastq.gz", checkNames = true):
+  echo "Pair length: ", pair.read1.sequenceLen + pair.read2.sequenceLen
 ```
+
+`FQRecordPtr` now includes cached `nameLen`, `commentLen`, `sequenceLen`, and
+`qualityLen` fields. These lengths exclude the trailing NUL terminator and
+avoid repeated `cstring` scans in pointer-heavy code. Because `FQRecordPtr`
+layout changed, downstream projects must be recompiled after upgrading to this
+release.
 
 ## Authors
 

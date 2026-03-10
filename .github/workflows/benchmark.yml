@@ -1,0 +1,89 @@
+name: Benchmark Guard
+
+on:
+  workflow_call:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+
+jobs:
+  interleaved-benchmark:
+    name: Interleaved throughput guard
+    runs-on: ubuntu-latest
+    env:
+      BENCH_LOOPS: "200000"
+      MIN_RELATIVE_SPEED: "0.90"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Nim
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: stable
+
+      - name: Install dependencies
+        run: nimble install -y
+
+      - name: Build interleaved benchmark
+        run: |
+          nim c --nimcache:/tmp/readfx_bench_cache -d:release --mm:orc --threads:on \
+            -o:benchmark/interleaved_pair_bench benchmark/interleaved_pair_bench.nim
+
+      - name: Run benchmark
+        run: |
+          ./benchmark/interleaved_pair_bench --loops="${BENCH_LOOPS}" > benchmark.tsv
+          cat benchmark.tsv
+
+      - name: Check regression budget
+        run: |
+          python3 - <<'PY'
+          import csv
+          import os
+          import sys
+
+          min_relative = float(os.environ["MIN_RELATIVE_SPEED"])
+          rows = {}
+          with open("benchmark.tsv", newline="") as fh:
+            reader = csv.DictReader(fh, delimiter="\t")
+            for row in reader:
+              rows[row["name"]] = row
+
+          required = ["readFQInterleavedPairPtr", "readFQ-string-regroup"]
+          missing = [name for name in required if name not in rows]
+          if missing:
+            print(f"Missing benchmark rows: {', '.join(missing)}", file=sys.stderr)
+            sys.exit(1)
+
+          interleaved = float(rows["readFQInterleavedPairPtr"]["pairs_per_sec"])
+          string_regroup = float(rows["readFQ-string-regroup"]["pairs_per_sec"])
+          ratio = interleaved / string_regroup if string_regroup else 0.0
+
+          print(f"Interleaved pairs/sec: {interleaved:.2f}")
+          print(f"String regroup pairs/sec: {string_regroup:.2f}")
+          print(f"Relative speed: {ratio:.3f}")
+
+          if ratio < min_relative:
+            print(
+              f"Benchmark regression: relative speed {ratio:.3f} is below the threshold {min_relative:.3f}",
+              file=sys.stderr,
+            )
+            sys.exit(1)
+          PY
+
+      - name: Write summary
+        run: |
+          {
+            echo "## Benchmark Guard"
+            echo
+            echo '```tsv'
+            cat benchmark.tsv
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
