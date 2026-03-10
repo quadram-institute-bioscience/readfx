@@ -1,0 +1,4 @@
+name	path	loops	repeats	total_records	median_seconds	records_per_sec
+readFQPtr	benchmark/M_abscessus_HiSeq.fq	3	7	17046030	1.931435	8825577.38
+readFQ	benchmark/M_abscessus_HiSeq.fq	3	7	17046030	5.305358	3212983.97
+readFastx	benchmark/M_abscessus_HiSeq.fq	3	7	17046030	3.774086	4516598.19
