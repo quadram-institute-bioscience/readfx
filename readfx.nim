@@ -334,7 +334,7 @@ proc fqfmt(name: string, comment: string, sequence: string, quality: string): st
 ## Returns:
 ##  Formatted FASTA string
 proc fafmt(name: string, comment: string, sequence: string, width: int = 60): string =
-  var result = ">" & name
+  result = ">" & name
   if comment != "":
     result = result & " " & comment
   result = result & "\n"

@@ -37,6 +37,12 @@ while f.readFastx(r):
 for pair in readFQPair("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
   echo "R1: ", pair.read1.name, " (", pair.read1.sequence.len, " bp)"
   echo "R2: ", pair.read2.name, " (", pair.read2.sequence.len, " bp)"
+
+# Pointer-based paired-end iteration (zero-copy, pointers are reused)
+for pair in readFQPairPtr("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
+  let r1 = $cast[cstring](pair.read1.sequence)
+  let r2 = $cast[cstring](pair.read2.sequence)
+  echo "Pair length: ", r1.len + r2.len
 ```
 
 ## Authors

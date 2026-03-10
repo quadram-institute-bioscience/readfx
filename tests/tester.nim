@@ -7,14 +7,11 @@ when defined(posix):
 
 import ../readfx
 
-proc checkRecord(r: FQRecord, quality = false): bool =
-  var ok = true
-  if r.name == "":
-    ok = false
-  if r.sequence == "":
-    ok = false
-  if quality and r.quality == "":
-    ok = false
+proc cstrOrEmpty(p: ptr char): string =
+  if p.isNil:
+    ""
+  else:
+    $cast[cstring](p)
   
 test "input files":
   # Check if the test files exist
@@ -140,9 +137,12 @@ test "FQRecord: Fasta: readfq()":
 
 test "FQRecord: Fasta: readfqptr()":
   for rec in readfqptr("./tests/fasta_demo.fa"):
-    check len(rec.name) > 0
-    check len(rec.sequence) > 0
-    check len(rec.comment) > 0
+    let name = cstrOrEmpty(rec.name)
+    let sequence = cstrOrEmpty(rec.sequence)
+    let comment = cstrOrEmpty(rec.comment)
+    check len(name) > 0
+    check len(sequence) > 0
+    check len(comment) > 0
 
 test "FQRecord: Fasta: readfx()":
   var rec: FQRecord
@@ -164,10 +164,14 @@ test "FQRecord: FASTQ: readfq()":
 
 test "FQRecord: FASTQ: readfqptr()":
   for rec in readfqptr("./tests/fastq_demo.fq"):
-    check len(rec.name) > 0
-    check len(rec.sequence) > 0
-    check len(rec.comment) > 0
-    check len(rec.quality) == len(rec.sequence)
+    let name = cstrOrEmpty(rec.name)
+    let sequence = cstrOrEmpty(rec.sequence)
+    let comment = cstrOrEmpty(rec.comment)
+    let quality = cstrOrEmpty(rec.quality)
+    check len(name) > 0
+    check len(sequence) > 0
+    check len(comment) > 0
+    check len(quality) == len(sequence)
 
 test "FQRecord: FASTQ: readfx()":
   var rec: FQRecord
