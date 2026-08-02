@@ -10,12 +10,19 @@ Utility functions for manipulating FASTA/FASTQ records are exported automaticall
 proc revCompl*(sequence: string): string
 proc revCompl*(record: var FQRecord)        # in-place; also reverses quality
 proc revCompl*(record: FQRecord): FQRecord  # returns new record
+proc revComplInPlace*(sequence: var string, quality: var string)  # fused kernel
 ```
 
-Reverse complements a DNA sequence.
+Reverse complements a DNA sequence. Case is preserved per base (lowercase
+complements to lowercase), IUPAC degenerate codes are complemented, and
+unknown characters pass through unchanged. Implemented with a 256-entry
+lookup table. The record overloads use `revComplInPlace`, a fused two-ended
+pass that complements the sequence and reverses the quality in a single
+traversal with no intermediate allocations.
 
 ```nim
 let rc = revCompl("ATGC")  # "GCAT"
+let lc = revCompl("AtGc")  # "gCaT"
 
 var rec: FQRecord
 # ... populate rec ...
@@ -30,7 +37,10 @@ proc gcContent*(sequence: string): float
 proc gcContent*(record: FQRecord): float
 ```
 
-Returns the GC fraction (0.0–1.0).
+Returns the GC fraction (0.0–1.0), computed as (G+C) / (A+C+G+T):
+ambiguous bases (N) and other symbols are excluded from the denominator.
+Returns 0.0 when there are no valid A/C/G/T bases. This matches the `GC`
+field of `composition()`.
 
 ```nim
 let gc = gcContent("ATGC")  # 0.5

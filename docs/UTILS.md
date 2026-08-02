@@ -118,7 +118,9 @@ Returns a `SeqComp` with per-base counts (A, C, G, T, N, Other) and GC fraction.
 ```nim
 proc gcContent*(sequence: string): float
 ```
-Returns GC fraction (0.0–1.0) for a sequence string.
+Returns GC fraction (0.0–1.0) for a sequence string, computed as
+(G+C) / (A+C+G+T) — ambiguous bases (N) and other symbols are excluded
+from the denominator. Returns 0.0 when there are no valid A/C/G/T bases.
 
 ### `gcContent` (record)
 ```nim

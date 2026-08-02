@@ -138,7 +138,7 @@ proc fafmt*(rec: FQRecord, width: int = 60): string  # Wrapped FASTA
 proc revCompl*(sequence: string): string          # Reverse complement of a string
 proc revCompl*(record: var FQRecord)              # In-place reverse complement
 proc revCompl*(record: FQRecord): FQRecord        # Returns new reverse-complemented record
-proc gcContent*(sequence: string): float          # GC fraction (0.0–1.0)
+proc gcContent*(sequence: string): float          # GC fraction over valid A/C/G/T bases (0.0–1.0)
 proc gcContent*(record: FQRecord): float
 proc composition*(record: FQRecord): SeqComp      # Full nucleotide composition
 proc subSequence*(record: FQRecord, start: int, length: int = -1): FQRecord
