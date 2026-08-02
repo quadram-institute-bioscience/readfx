@@ -14,6 +14,7 @@ skipDirs = @["tests"]
 task test, "run the tests":
   exec "nim c -r tests/tester"
   exec "nim c -r tests/test_paired"
+  exec "nim c -r tests/utils"
 
 # DOCUMENTATION
 # ============================================================================
