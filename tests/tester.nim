@@ -537,3 +537,120 @@ test "fastxWriter FASTQ validates quality":
 
   expect ValueError:
     w.writeRecord("bad1", "ACGT", "")
+
+#===
+# Bufio low-level API
+#===
+
+test "Bufio: readUntil field/line modes, readLine, readByte, eof":
+  let path = getTempDir() / "readfx_bufio.txt"
+  writeFile(path, "field1 field2\tfield3\nline two\r\nlast line")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var f = xopen[GzFile](path)
+  defer: f.close()
+  var buf = ""
+  var dret: char
+
+  # field mode (-2) stops at space
+  check f.readUntil(buf, dret, -2) == 6
+  check buf == "field1"
+  check dret == ' '
+  # field mode (-2) stops at tab
+  check f.readUntil(buf, dret, -2) == 6
+  check buf == "field2"
+  check dret == '\t'
+  # line mode (-1) reads to newline
+  check f.readUntil(buf, dret, -1) == 6
+  check buf == "field3"
+  check dret == '\n'
+  # line mode (-1) strips a trailing CR
+  check f.readUntil(buf, dret, -1) == 8
+  check buf == "line two"
+  # readLine at EOF without trailing newline
+  check f.readLine(buf)
+  check buf == "last line"
+  # EOF signaling
+  check f.readByte() == -1
+  check f.eof()
+
+test "Bufio: readUntil custom delimiter":
+  let path = getTempDir() / "readfx_bufio2.txt"
+  writeFile(path, "abc:def:ghi")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var f = xopen[GzFile](path)
+  defer: f.close()
+  var buf = ""
+  var dret: char
+
+  check f.readUntil(buf, dret, int(':')) == 3
+  check buf == "abc"
+  check dret == ':'
+  check f.readUntil(buf, dret, int(':')) == 3
+  check buf == "def"
+  check f.readUntil(buf, dret, int(':')) == 3  # last field, ends at EOF
+  check buf == "ghi"
+
+#===
+# readFastx edge cases
+#===
+
+test "readFastx: malformed FASTQ (quality shorter than sequence) sets status -4":
+  let path = getTempDir() / "readfx_badqual.fq"
+  writeFile(path, "@r1\nACGT\n+\nII\n")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var r: FQRecord
+  var f = xopen[GzFile](path)
+  defer: f.close()
+  check f.readFastx(r) == false
+  check r.status == -4
+
+test "readFastx: wrapped multi-line FASTA and EOF status":
+  let path = getTempDir() / "readfx_wrapped.fa"
+  writeFile(path, ">seq1 comment here\nACGT\nACGT\nAC\n>seq2\nTT\nGG\n")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var r: FQRecord
+  var f = xopen[GzFile](path)
+  defer: f.close()
+  check f.readFastx(r)
+  check r.name == "seq1"
+  check r.comment == "comment here"
+  check r.sequence == "ACGTACGTAC"
+  check f.readFastx(r)
+  check r.name == "seq2"
+  check r.sequence == "TTGG"
+  check f.readFastx(r) == false
+  check r.status == -1
+
+test "readFastx: CRLF line endings":
+  let path = getTempDir() / "readfx_crlf.fq"
+  # r1 has a comment; r2 has no comment (name directly followed by CR)
+  writeFile(path, "@r1 cmt\r\nACGT\r\n+\r\nIIII\r\n@r2\r\nAC\r\n+\r\nII\r\n")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var r: FQRecord
+  var f = xopen[GzFile](path)
+  defer: f.close()
+  check f.readFastx(r)
+  check r.name == "r1"
+  check r.comment == "cmt"
+  check r.sequence == "ACGT"
+  check r.quality == "IIII"
+  check f.readFastx(r)
+  check r.name == "r2"          # no trailing CR in the name
+  check r.comment == ""
+  check r.sequence == "AC"
+  check r.quality == "II"
