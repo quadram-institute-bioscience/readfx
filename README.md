@@ -45,6 +45,10 @@ for pair in readFQPairPtr("sample_R1.fastq.gz", "sample_R2.fastq.gz"):
 # Pointer-based interleaved paired-end iteration
 for pair in readFQInterleavedPairPtr("sample.interleaved.fastq.gz", checkNames = true):
   echo "Pair length: ", pair.read1.sequenceLen + pair.read2.sequenceLen
+
+# String-based interleaved paired-end iteration (safe to store records)
+for pair in readFQInterleavedPair("sample.interleaved.fastq.gz", checkNames = true):
+  echo "R1: ", pair.read1.name, " / R2: ", pair.read2.name
 ```
 
 `FQRecordPtr` now includes cached `nameLen`, `commentLen`, `sequenceLen`, and
