@@ -138,6 +138,14 @@ proc cstrOrEmpty(p: ptr char): string {.inline.} =
   else:
     $cast[cstring](p)
 
+proc strFromPtr(p: ptr char, len: int): string {.inline.} =
+  ## Build a Nim string from a kseq field pointer and its cached length,
+  ## avoiding the strlen rescan done by cstrOrEmpty. Nil pointers map to "".
+  if p.isNil or len <= 0:
+    return ""
+  result = newString(len)
+  copyMem(addr result[0], p, len)
+
 proc normalizePairName(name: string, mate: int): string {.inline.} =
   result = name
   if mate == 1 and (result.endsWith("/1") or result.endsWith(" 1")):
@@ -257,10 +265,10 @@ iterator readFQPtr*(path: string): FQRecordPtr =
 iterator readFQ*(path: string): FQRecord =
   var result: FQRecord  # 'result' not implicit in iterators
   for rec in readFQPtr(path):
-    result.name = cstrOrEmpty(rec.name)
-    result.comment = cstrOrEmpty(rec.comment)
-    result.sequence = cstrOrEmpty(rec.sequence)
-    result.quality = cstrOrEmpty(rec.quality)
+    result.name = strFromPtr(rec.name, rec.nameLen)
+    result.comment = strFromPtr(rec.comment, rec.commentLen)
+    result.sequence = strFromPtr(rec.sequence, rec.sequenceLen)
+    result.quality = strFromPtr(rec.quality, rec.qualityLen)
     yield result
 
 ## Iterator for reading paired-end FASTQ files synchronously with pointers
@@ -406,6 +414,47 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
   finally:
     discard gzclose(fp)
 
+## Iterator for reading interleaved paired-end FASTQ files
+##
+## Reads one interleaved FASTQ stream and yields each adjacent R1/R2 record
+## pair as `FQPair` with copied string data (safe to store after the loop).
+## Built on `readFQInterleavedPairPtr`; use that instead when allocation
+## overhead matters.
+##
+## Args:
+##   path: Path to the interleaved FASTQ file (supports gzipped files; `"-"`
+##     reads from stdin)
+##   checkNames: Whether to verify that read names match after mate suffix
+##     normalization (default: false)
+##
+## Returns:
+##   An iterator yielding `FQPair` objects with synchronized reads
+##
+## Raises:
+##   IOError: If the input stream cannot be opened or ends with an incomplete pair
+##   ValueError: If input is not FASTQ or `checkNames` detects a mismatch
+##
+## Example:
+##
+## ```nim
+## for pair in readFQInterleavedPair("sample.interleaved.fastq.gz"):
+##   echo "R1: ", pair.read1.name
+##   echo "R2: ", pair.read2.name
+## ```
+iterator readFQInterleavedPair*(path: string, checkNames: bool = false): FQPair =
+  var pair: FQPair
+  for rec in readFQInterleavedPairPtr(path, checkNames = checkNames):
+    pair.read1.name = strFromPtr(rec.read1.name, rec.read1.nameLen)
+    pair.read1.comment = strFromPtr(rec.read1.comment, rec.read1.commentLen)
+    pair.read1.sequence = strFromPtr(rec.read1.sequence, rec.read1.sequenceLen)
+    pair.read1.quality = strFromPtr(rec.read1.quality, rec.read1.qualityLen)
+
+    pair.read2.name = strFromPtr(rec.read2.name, rec.read2.nameLen)
+    pair.read2.comment = strFromPtr(rec.read2.comment, rec.read2.commentLen)
+    pair.read2.sequence = strFromPtr(rec.read2.sequence, rec.read2.sequenceLen)
+    pair.read2.quality = strFromPtr(rec.read2.quality, rec.read2.qualityLen)
+    yield pair
+
 ## Iterator for reading paired-end FASTQ files synchronously
 ##
 ## Reads two FASTQ files in parallel, yielding pairs of corresponding records.
@@ -434,15 +483,15 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
 iterator readFQPair*(path1: string, path2: string, checkNames: bool = false): FQPair =
   var pair: FQPair
   for rec in readFQPairPtr(path1, path2, checkNames = checkNames):
-    pair.read1.name = cstrOrEmpty(rec.read1.name)
-    pair.read1.comment = cstrOrEmpty(rec.read1.comment)
-    pair.read1.sequence = cstrOrEmpty(rec.read1.sequence)
-    pair.read1.quality = cstrOrEmpty(rec.read1.quality)
+    pair.read1.name = strFromPtr(rec.read1.name, rec.read1.nameLen)
+    pair.read1.comment = strFromPtr(rec.read1.comment, rec.read1.commentLen)
+    pair.read1.sequence = strFromPtr(rec.read1.sequence, rec.read1.sequenceLen)
+    pair.read1.quality = strFromPtr(rec.read1.quality, rec.read1.qualityLen)
 
-    pair.read2.name = cstrOrEmpty(rec.read2.name)
-    pair.read2.comment = cstrOrEmpty(rec.read2.comment)
-    pair.read2.sequence = cstrOrEmpty(rec.read2.sequence)
-    pair.read2.quality = cstrOrEmpty(rec.read2.quality)
+    pair.read2.name = strFromPtr(rec.read2.name, rec.read2.nameLen)
+    pair.read2.comment = strFromPtr(rec.read2.comment, rec.read2.commentLen)
+    pair.read2.sequence = strFromPtr(rec.read2.sequence, rec.read2.sequenceLen)
+    pair.read2.quality = strFromPtr(rec.read2.quality, rec.read2.qualityLen)
     yield pair
 
 ## Formats a sequence record as a FASTA or FASTQ string
