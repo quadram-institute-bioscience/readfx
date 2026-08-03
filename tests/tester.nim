@@ -538,6 +538,95 @@ test "fastxWriter FASTQ validates quality":
   expect ValueError:
     w.writeRecord("bad1", "ACGT", "")
 
+test "fastxWriter FQRecordPtr round-trip (FASTQ)":
+  let outPath = getTempDir() / "readfx_writer_ptr.fastq"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFastq,
+    compression = false,
+    destination = fileDestination(outPath),
+    bufferSize = 64
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  # zero-copy pipeline: pointer records written directly
+  for rec in readFQPtr("./tests/fastq_demo.fq"):
+    w.writeRecord(rec)
+  w.close()
+
+  # written output must match a direct string-based read of the source
+  var expected: seq[tuple[name, sequence, quality: string]]
+  for rec in readFQ("./tests/fastq_demo.fq"):
+    expected.add((rec.name, rec.sequence, rec.quality))
+
+  var got: seq[tuple[name, sequence, quality: string]]
+  for rec in readFQ(outPath):
+    got.add((rec.name, rec.sequence, rec.quality))
+
+  check got == expected
+  check got.len > 0
+
+test "fastxWriter FQRecordPtr round-trip (FASTA)":
+  let outPath = getTempDir() / "readfx_writer_ptr.fasta"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFasta,
+    compression = false,
+    destination = fileDestination(outPath),
+    bufferSize = 64,
+    fastaWidth = 60
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  for rec in readFQPtr("./tests/fasta_demo.fa"):
+    w.writeRecord(rec)
+  w.close()
+
+  var expected: seq[tuple[name, sequence: string]]
+  for rec in readFQ("./tests/fasta_demo.fa"):
+    expected.add((rec.name, rec.sequence))
+
+  var got: seq[tuple[name, sequence: string]]
+  for rec in readFQ(outPath):
+    check rec.quality == ""        # FASTA output carries no qualities
+    got.add((rec.name, rec.sequence))
+
+  check got == expected
+  check got.len > 0
+
+test "fastxWriter FQRecordPtr FASTQ validates quality":
+  let outPath = getTempDir() / "readfx_writer_ptr_invalid.fastq"
+  if fileExists(outPath):
+    removeFile(outPath)
+
+  var w = fastxWriter(
+    format = fxfFastq,
+    compression = false,
+    destination = fileDestination(outPath)
+  )
+  defer:
+    if w.isOpen:
+      w.close()
+    if fileExists(outPath):
+      removeFile(outPath)
+
+  # a FASTA record (no qualities) must be rejected in FASTQ mode
+  expect ValueError:
+    for rec in readFQPtr("./tests/fasta_demo.fa"):
+      w.writeRecord(rec)
+
 #===
 # Bufio low-level API
 #===

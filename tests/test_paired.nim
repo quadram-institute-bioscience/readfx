@@ -195,6 +195,39 @@ suite "Paired-end reading tests":
     check cstrOrEmpty(second.read1.sequence) == "AA"
     check cstrOrEmpty(second.read2.sequence) == "AAAAAAAA"
 
+  test "readFQInterleavedPair basic functionality":
+    var count = 0
+    for pair in readFQInterleavedPair("./tests/test_interleaved.fq"):
+      inc count
+      check pair.read1.name == "read" & $count
+      check pair.read2.name == "read" & $count
+      check pair.read1.sequence.len + pair.read2.sequence.len == 10
+      check pair.read1.sequence.len == pair.read1.quality.len
+      check pair.read2.sequence.len == pair.read2.quality.len
+    check count == 3
+
+  test "readFQInterleavedPair name checking":
+    var count = 0
+    for pair in readFQInterleavedPair("./tests/test_interleaved.fq", checkNames = true):
+      discard pair
+      inc count
+    check count == 3
+
+  test "readFQInterleavedPair odd record count raises IOError":
+    expect IOError:
+      for pair in readFQInterleavedPair("./tests/test_interleaved_odd.fq"):
+        discard pair
+
+  test "readFQInterleavedPair matches pointer variant":
+    var namesPtr, namesStr: seq[string]
+    for pair in readFQInterleavedPairPtr("./tests/test_interleaved.fq"):
+      namesPtr.add(cstrOrEmpty(pair.read1.name))
+      namesPtr.add(cstrOrEmpty(pair.read2.name))
+    for pair in readFQInterleavedPair("./tests/test_interleaved.fq"):
+      namesStr.add(pair.read1.name)
+      namesStr.add(pair.read2.name)
+    check namesStr == namesPtr
+
   test "readFQPair basic functionality (uncompressed synthetic data)":
     var count = 0
     
