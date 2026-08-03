@@ -183,6 +183,50 @@ proc appendFastqRecord(dst: var string, record: FQRecord) =
   dst.add(record.quality)
   dst.add('\n')
 
+proc appendPtr(dst: var string, p: ptr char, len: int) {.inline.} =
+  ## Append `len` bytes from a pointer field, avoiding an intermediate
+  ## string allocation. Nil pointers and non-positive lengths are no-ops.
+  if p.isNil or len <= 0:
+    return
+  let oldLen = dst.len
+  dst.setLen(oldLen + len)
+  copyMem(dst[oldLen].addr, p, len)
+
+proc appendWrappedSequencePtr(dst: var string, p: ptr char, len: int, width: int) =
+  ## FASTA line wrapping directly from a pointer field.
+  if width <= 0:
+    dst.appendPtr(p, len)
+    dst.add('\n')
+    return
+
+  var i = 0
+  while i < len:
+    let j = min(i + width, len)
+    dst.appendPtr(addr cast[ptr UncheckedArray[char]](p)[i], j - i)
+    dst.add('\n')
+    i = j
+
+proc appendFastqRecord(dst: var string, record: FQRecordPtr) =
+  dst.add('@')
+  dst.appendPtr(record.name, record.nameLen)
+  if record.commentLen > 0:
+    dst.add(' ')
+    dst.appendPtr(record.comment, record.commentLen)
+  dst.add('\n')
+  dst.appendPtr(record.sequence, record.sequenceLen)
+  dst.add("\n+\n")
+  dst.appendPtr(record.quality, record.qualityLen)
+  dst.add('\n')
+
+proc appendFastaRecord(dst: var string, record: FQRecordPtr, width: int) =
+  dst.add('>')
+  dst.appendPtr(record.name, record.nameLen)
+  if record.commentLen > 0:
+    dst.add(' ')
+    dst.appendPtr(record.comment, record.commentLen)
+  dst.add('\n')
+  appendWrappedSequencePtr(dst, record.sequence, record.sequenceLen, width)
+
 proc appendFastaRecord(dst: var string, record: FQRecord, width: int) =
   dst.add('>')
   dst.add(record.name)
@@ -201,6 +245,19 @@ proc validateRecord(w: FastxWriter, record: FQRecord) =
     if record.quality.len == 0:
       raise newException(ValueError, "FASTQ output requires a non-empty quality string")
     if record.quality.len != record.sequence.len:
+      raise newException(ValueError, "FASTQ quality length must match sequence length")
+  of fxfFasta:
+    discard
+
+proc validateRecord(w: FastxWriter, record: FQRecordPtr) =
+  if record.nameLen == 0:
+    raise newException(ValueError, "Record name cannot be empty")
+
+  case w.format
+  of fxfFastq:
+    if record.qualityLen == 0:
+      raise newException(ValueError, "FASTQ output requires a non-empty quality string")
+    if record.qualityLen != record.sequenceLen:
       raise newException(ValueError, "FASTQ quality length must match sequence length")
   of fxfFasta:
     discard
@@ -242,6 +299,35 @@ proc writeRecord*(
   ##   quality: FASTQ quality string (required for FASTQ mode)
   ##   comment: Optional header comment
   writeRecord(w, FQRecord(name: name, sequence: sequence, quality: quality, comment: comment))
+
+proc writeRecord*(w: var FastxWriter, record: FQRecordPtr) =
+  ## Append one pointer-based record to the writer (zero-copy).
+  ##
+  ## Fields are copied straight from the pointers into the output buffer
+  ## using their cached lengths, without materializing Nim strings — the
+  ## high-throughput counterpart to `readFQPtr` and friends.
+  ##
+  ## Args:
+  ##   w: Writer instance
+  ##   record: Pointer-based record (e.g. from `readFQPtr`)
+  ##
+  ## Notes:
+  ##   Pointer fields are read immediately at call time and must still be
+  ##   valid — call this before advancing the reading iterator.
+  ##
+  ## Raises:
+  ##   IOError: If the writer is closed or I/O fails
+  ##   ValueError: If record validation fails for selected format
+  ensureOpen(w)
+  validateRecord(w, record)
+
+  case w.format
+  of fxfFastq:
+    appendFastqRecord(w.outputBuffer, record)
+  of fxfFasta:
+    appendFastaRecord(w.outputBuffer, record, w.fastaWidth)
+
+  maybeFlushBuffer(w)
 
 proc close*(w: var FastxWriter) =
   ## Flush and close the writer stream.
