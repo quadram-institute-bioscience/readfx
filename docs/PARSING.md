@@ -60,6 +60,9 @@ for record in readFQPtr("sample.fastq.gz"):
 
 **When to use**: Processing very large files where memory allocation overhead matters.
 
+Malformed `@` FASTQ records raise `ValueError`; valid FASTA records with `>`
+headers still parse without qualities.
+
 **Important**: Pointers in `FQRecordPtr` are invalidated on the next iteration. Cached lengths (`nameLen`, `commentLen`, `sequenceLen`, `qualityLen`) exclude the trailing NUL terminator. If you need to retain data, copy it explicitly:
 
 ```nim
@@ -89,6 +92,10 @@ while f.readFastx(record):
 ```
 
 **When to use**: Custom parsing workflows, interleaving reads with other I/O, or when you need fine-grained control over the parse loop.
+
+On parse failure, `readFastx` returns `false` and stores a negative status in
+the record. Status `-4` means malformed FASTQ, including an `@` record without
+a `+` line or a sequence/quality length mismatch.
 
 ---
 

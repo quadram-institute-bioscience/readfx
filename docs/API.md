@@ -73,13 +73,16 @@ Genomic interval for use with the built-in interval tree.
 ```nim
 iterator readFQ*(path: string): FQRecord
 ```
-Yields `FQRecord` objects with string fields. Use `"-"` for stdin.
+Yields `FQRecord` objects with string fields. Use `"-"` for stdin. Raises
+`ValueError` for malformed `@` FASTQ records.
 
 #### `readFQPtr`
 ```nim
 iterator readFQPtr*(path: string): FQRecordPtr
 ```
-Yields pointer-based records. Faster than `readFQ` but pointers are reused on each iteration. Cached lengths are populated on every record.
+Yields pointer-based records. Faster than `readFQ` but pointers are reused on
+each iteration. Cached lengths are populated on every record. Raises
+`ValueError` for malformed `@` FASTQ records.
 
 #### `readFQPairPtr`
 ```nim
@@ -114,7 +117,8 @@ trailing pairs; `ValueError` on name mismatch when `checkNames = true`.
 ```nim
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool
 ```
-Low-level reader. Returns `false` at EOF. Used directly when managing your own file handles.
+Low-level reader. Returns `false` at EOF or parse failure; inspect
+`r.status` to distinguish EOF from malformed FASTQ.
 
 ---
 
