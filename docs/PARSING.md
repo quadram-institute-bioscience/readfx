@@ -1,12 +1,13 @@
 # FASTX Parsing in ReadFX
 
-ReadFX provides five primary methods for parsing FASTA and FASTQ files:
+ReadFX provides six primary methods for parsing FASTA and FASTQ files:
 
 1. **`readFQ`** — String-based iterator (convenient, safe)
 2. **`readFQPtr`** — Pointer-based iterator (fastest, requires care)
 3. **`readFastx`** — Low-level buffered reader (most flexible)
 4. **`readFQPair`** — Synchronized paired-end iterator
 5. **`readFQInterleavedPairPtr`** — Pointer-based interleaved paired-end iterator
+6. **`readFQInterleavedPair`** — String-based interleaved paired-end iterator
 
 ## Comparison at a Glance
 
@@ -17,6 +18,7 @@ ReadFX provides five primary methods for parsing FASTA and FASTQ files:
 | `readFastx` | Custom | Excellent | Requires setup | Custom I/O workflows |
 | `readFQPair` | Moderate | Good | Excellent | Separate paired-end files |
 | `readFQInterleavedPairPtr` | Low | Excellent | Moderate | Interleaved paired-end streams |
+| `readFQInterleavedPair` | Moderate | Good | Excellent | Interleaved paired-end streams |
 
 ---
 
@@ -142,10 +144,36 @@ for pair in readFQInterleavedPairPtr("sample.interleaved.fastq.gz", checkNames =
 
 ---
 
+## `readFQInterleavedPair`
+
+```nim
+iterator readFQInterleavedPair*(path: string, checkNames: bool = false): FQPair
+```
+
+String-based counterpart to `readFQInterleavedPairPtr`: reads one interleaved
+FASTQ stream and yields `FQPair` records with copied data, safe to store after
+the loop.
+
+```nim
+import readfx
+
+for pair in readFQInterleavedPair("sample.interleaved.fastq.gz", checkNames = true):
+  echo pair.read1.name, " / ", pair.read2.name
+```
+
+- FASTQ only; same validation and error behavior as the pointer variant.
+- Stdin (`"-"`) is supported.
+
+**When to use**: Interleaved paired-end workflows where convenience matters
+more than raw throughput — the safe default for interleaved data.
+
+---
+
 ## Implementation Notes
 
-- `readFQ` is built on top of `readFQPtr` and converts pointers to strings on each yield.
+- `readFQ` is built on top of `readFQPtr` and converts pointers to strings on each yield (using cached field lengths, no `strlen` rescans).
+- `readFQPair` and `readFQInterleavedPair` are built the same way on `readFQPairPtr` and `readFQInterleavedPairPtr`.
 - `readFQPtr`, `readFQPairPtr`, and `readFQInterleavedPairPtr` use Heng Li's `kseq.h` C library directly via FFI.
 - `readFastx` is a native Nim implementation in `readfx/nimklib.nim`.
-- All methods support transparent gzip decompression. `readFQInterleavedPairPtr`
-  is FASTQ-only; the other readers auto-detect FASTA vs FASTQ.
+- All methods support transparent gzip decompression. The interleaved readers
+  are FASTQ-only; the other readers auto-detect FASTA vs FASTQ.

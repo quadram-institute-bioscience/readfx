@@ -102,6 +102,14 @@ iterator readFQPair*(path1, path2: string, checkNames: bool = false): FQPair
 ```
 Yields synchronized paired-end records. Raises `IOError` on length mismatch; raises `ValueError` on name mismatch when `checkNames = true`.
 
+#### `readFQInterleavedPair`
+```nim
+iterator readFQInterleavedPair*(path: string, checkNames: bool = false): FQPair
+```
+Yields string-based paired-end records from one interleaved FASTQ stream
+(safe to store after the loop). FASTQ only. Raises `IOError` on incomplete
+trailing pairs; `ValueError` on name mismatch when `checkNames = true`.
+
 #### `readFastx`
 ```nim
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool
