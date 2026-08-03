@@ -65,6 +65,7 @@ type
     seq: kstring_t
     qual: kstring_t
     last_char: cint
+    curr_char: cint
     f: ptr kstream_t
   gzFile = pointer
 
@@ -112,6 +113,13 @@ proc kseq_rewind*(seq: ptr kseq_t) {.header: kseqh, importc: "kseq_rewind".}
 ## Returns:
 ##   Record sequence length on success, or a negative status code on EOF/error
 proc kseq_read*(seq: ptr kseq_t): cint {.header: kseqh, importc: "kseq_read".}
+
+
+## Destroy a kseq parser handle and release its internal buffers.
+##
+## Args:
+##   seq: Parser state previously created with `kseq_init`
+proc kseq_destroy*(seq: ptr kseq_t) {.header: kseqh, importc: "kseq_destroy".}
 
 proc openGzForRead(path: string): GzFile =
   if path == "-":
@@ -204,6 +212,34 @@ proc requireFastqRecord(rec: ptr kseq_t, path: string, pairNumber: int, mate: in
       $pairNumber & ", mate " & $mate & " in " & path
     )
 
+proc raiseKseqReadError(path: string, status: cint, recordNumber: int) {.noReturn.} =
+  case status
+  of -2:
+    raise newException(
+      ValueError,
+      "Malformed FASTQ in " & path & " at record " & $recordNumber &
+      ": truncated or mismatched quality string"
+    )
+  of -3:
+    raise newException(
+      IOError,
+      "Error reading " & path & " at record " & $recordNumber
+    )
+  else:
+    raise newException(
+      IOError,
+      "kseq_read failed for " & path & " at record " & $recordNumber &
+      " with status " & $status
+    )
+
+proc requireQualityForFastqHeader(rec: ptr kseq_t, path: string, recordNumber: int) =
+  if rec.curr_char == cint('@') and rec.qual.s.isNil:
+    raise newException(
+      ValueError,
+      "Malformed FASTQ in " & path & " at record " & $recordNumber &
+      ": '@' record is missing '+' line and qualities"
+    )
+
 ## Iterator for reading FASTQ files, returning pointers to record data
 ##
 ## Note: The pointers are reused between iterations, so don't store them.
@@ -219,6 +255,7 @@ proc requireFastqRecord(rec: ptr kseq_t, path: string, pairNumber: int, mate: in
 ##
 ## Raises:
 ##   IOError: If the input stream cannot be opened
+##   ValueError: If an `@` FASTQ record is malformed
 ##
 ## Example:
 ##
@@ -234,12 +271,22 @@ iterator readFQPtr*(path: string): FQRecordPtr =
   var result: FQRecordPtr# 'result' not implicit in iterators
   let fp = openGzForRead(path)
   let rec = kseq_init(fp)
-  while true:
-    if kseq_read(rec) < 0:
-      break
-    result.setRecordPtrFields(rec)
-    yield result
-  discard gzclose(fp)
+  var recordNumber = 0
+  try:
+    while true:
+      let ret = kseq_read(rec)
+      if ret == -1:
+        break
+      if ret < -1:
+        raiseKseqReadError(path, ret, recordNumber + 1)
+
+      inc recordNumber
+      requireQualityForFastqHeader(rec, path, recordNumber)
+      result.setRecordPtrFields(rec)
+      yield result
+  finally:
+    kseq_destroy(rec)
+    discard gzclose(fp)
 
 ## Iterator for reading FASTQ files, returning copies of record data
 ##
@@ -254,6 +301,7 @@ iterator readFQPtr*(path: string): FQRecordPtr =
 ##
 ## Raises:
 ##   IOError: Propagated from `readFQPtr` if the input stream cannot be opened
+##   ValueError: Propagated from `readFQPtr` if an `@` FASTQ record is malformed
 ##
 ## Example:
 ##
@@ -313,16 +361,23 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
       let ret1 = kseq_read(rec1)
       let ret2 = kseq_read(rec2)
 
-      if ret1 < 0 and ret2 < 0:
+      if ret1 < -1:
+        raiseKseqReadError(path1, ret1, count + 1)
+      if ret2 < -1:
+        raiseKseqReadError(path2, ret2, count + 1)
+
+      if ret1 == -1 and ret2 == -1:
         break
 
-      if ret1 < 0:
+      if ret1 == -1:
         raise newException(IOError, "File " & path1 & " ended prematurely after " & $count & " sequences")
-      if ret2 < 0:
+      if ret2 == -1:
         raise newException(IOError, "File " & path2 & " ended prematurely after " & $count & " sequences")
 
       count += 1
 
+      requireQualityForFastqHeader(rec1, path1, count)
+      requireQualityForFastqHeader(rec2, path2, count)
       pair.read1.setRecordPtrFields(rec1)
       pair.read2.setRecordPtrFields(rec2)
 
@@ -338,6 +393,8 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
       yield pair
 
   finally:
+    kseq_destroy(rec1)
+    kseq_destroy(rec2)
     discard gzclose(fp1)
     discard gzclose(fp2)
 
@@ -374,8 +431,10 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
   try:
     while true:
       let ret1 = kseq_read(rec)
-      if ret1 < 0:
+      if ret1 == -1:
         break
+      if ret1 < -1:
+        raiseKseqReadError(path, ret1, pairCount * 2 + 1)
 
       let pairNumber = pairCount + 1
       requireFastqRecord(rec, path, pairNumber, 1)
@@ -392,9 +451,11 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
       )
 
       let ret2 = kseq_read(rec)
-      if ret2 < 0:
+      if ret2 == -1:
         raise newException(IOError, "Interleaved file " & path &
           " ended prematurely after " & $pairCount & " complete pairs")
+      if ret2 < -1:
+        raiseKseqReadError(path, ret2, pairNumber * 2)
 
       requireFastqRecord(rec, path, pairNumber, 2)
       pair.read2.setRecordPtrFields(rec)
@@ -412,6 +473,7 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
       yield pair
 
   finally:
+    kseq_destroy(rec)
     discard gzclose(fp)
 
 ## Iterator for reading interleaved paired-end FASTQ files

@@ -78,7 +78,7 @@ type
 ##     - -1: End of file
 ##     - -2: Stream error
 ##     - -3: Other parsing error
-##     - -4: Sequence and quality length mismatch
+##     - -4: Malformed FASTQ (`@` record without `+`, or quality length mismatch)
 ##   lastChar: The last character read from the file (used internally)
 ##
 ## Example:

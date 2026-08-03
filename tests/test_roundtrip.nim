@@ -7,8 +7,30 @@ import ../readfx
 
 type RecTuple = tuple[name, comment, sequence, quality: string]
 
+proc cstrOrEmpty(p: ptr char): string =
+  if p.isNil:
+    ""
+  else:
+    $cast[cstring](p)
+
 proc slurp(path: string): seq[RecTuple] =
   for rec in readFQ(path):
+    result.add((rec.name, rec.comment, rec.sequence, rec.quality))
+
+proc slurpPtr(path: string): seq[RecTuple] =
+  for rec in readFQPtr(path):
+    result.add((
+      cstrOrEmpty(rec.name),
+      cstrOrEmpty(rec.comment),
+      cstrOrEmpty(rec.sequence),
+      cstrOrEmpty(rec.quality)
+    ))
+
+proc slurpNative(path: string): seq[RecTuple] =
+  var rec: FQRecord
+  var f = xopen[GzFile](path)
+  defer: f.close()
+  while f.readFastx(rec):
     result.add((rec.name, rec.comment, rec.sequence, rec.quality))
 
 proc toTuples(records: seq[FQRecord]): seq[RecTuple] =
@@ -21,6 +43,32 @@ proc tmpPath(name: string): string =
 # ============================================================
 # Round-trip identity: read -> write -> read must be stable
 # ============================================================
+
+test "regression: single-file readers can read the same file twice":
+  let path = "./tests/fastq_demo.fq"
+  let expected = slurp(path)
+  check expected.len > 0
+
+  check slurp(path) == expected
+  check slurp(path) == expected
+  check slurpPtr(path) == expected
+  check slurpPtr(path) == expected
+  check slurpNative(path) == expected
+  check slurpNative(path) == expected
+
+test "regression: early exit from readFQPtr does not affect later reads":
+  let path = "./tests/fastq_demo.fq"
+  let expected = slurp(path)
+  var seen = 0
+
+  for rec in readFQPtr(path):
+    check cstrOrEmpty(rec.name).len > 0
+    inc seen
+    break
+
+  check seen == 1
+  check slurpPtr(path) == expected
+  check slurp(path) == expected
 
 test "round-trip: FASTQ plain and gzip":
   let expected = slurp("./tests/fastq_demo.fq")
@@ -141,27 +189,20 @@ test "corpus: no final newline parses cleanly":
     ("read1", "", "ACGT", "IIII")
   ]
 
-test "corpus: missing '+' line degrades the record to FASTA":
-  let recs = slurp("./tests/corpus/missing_plus.fq")
-  check recs == @[
-    ("read1", "", "ACGT", ""),      # no quality: parsed as FASTA
-    ("read2", "", "TTTT", "IIII")
-  ]
+test "corpus: missing '+' line is rejected for @ records":
+  expect ValueError:
+    discard slurp("./tests/corpus/missing_plus.fq")
 
-test "corpus: malformed records stop kseq iterators silently":
-  # kseq_read returns a negative code for these, which the iterators
-  # treat like EOF: zero records, no exception. Documented behavior.
+test "corpus: malformed records raise in kseq iterators":
   for file in ["truncated_quality.fq", "truncated_after_plus.fq",
                "empty_quality.fq"]:
-    var n = 0
-    for rec in readFQ("./tests/corpus/" & file):
-      inc n
-    check n == 0
+    expect ValueError:
+      discard slurp("./tests/corpus/" & file)
 
 test "corpus: readFastx reports malformed records with status -4":
   # The native parser distinguishes malformed records from clean EOF.
   for file in ["truncated_quality.fq", "truncated_after_plus.fq",
-               "empty_quality.fq"]:
+               "empty_quality.fq", "missing_plus.fq"]:
     var r: FQRecord
     var f = xopen[GzFile]("./tests/corpus/" & file)
     check f.readFastx(r) == false
@@ -197,11 +238,14 @@ test "truncation fuzz: truncated FASTQ never crashes either engine":
     let truncPath = tmpPath("readfx_fuzz_trunc.fq")
     writeFile(truncPath, content[0 ..< cut])
 
-    # kseq iterators: no exception, at most 50 records
+    # kseq iterators: no crash; malformed truncations now raise explicitly
     var n = 0
-    for rec in readFQ(truncPath):
-      inc n
-    check n <= 50
+    try:
+      for rec in readFQ(truncPath):
+        inc n
+      check n <= 50
+    except ValueError, IOError:
+      check n <= 50
 
     # readFastx: loop ends with false and a negative status, no crash
     var r: FQRecord
@@ -236,9 +280,12 @@ test "truncation fuzz: truncated gzip stream degrades cleanly":
     writeFile(truncPath, content[0 ..< cut])
 
     var n = 0
-    for rec in readFQ(truncPath):    # must not raise
-      inc n
-    check n <= 20
+    try:
+      for rec in readFQ(truncPath):
+        inc n
+      check n <= 20
+    except ValueError, IOError:
+      check n <= 20
 
     var r: FQRecord
     var f = xopen[GzFile](truncPath)

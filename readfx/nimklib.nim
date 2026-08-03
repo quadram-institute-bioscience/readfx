@@ -281,7 +281,7 @@ proc readLine*[T](f: var Bufio[T], buf: var string): bool {.discardable.} =
 ##   - `-1`: EOF
 ##   - `-2`: stream read error
 ##   - `-3`: parser/stream state error
-##   - `-4`: FASTQ sequence and quality length mismatch
+##   - `-4`: malformed FASTQ (`@` record without `+`, or quality length mismatch)
 proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
   var x: int
   var c: char
@@ -291,6 +291,7 @@ proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
       if x < 0 or x == int('>') or x == int('@'): break
     if x < 0: r.status = x; return false # end-of-file or stream error
     r.lastChar = x
+  let headerChar = r.lastChar
   r.sequence.setLen(0); r.quality.setLen(0); r.comment.setLen(0)
   x = f.readUntil(r.name, c, -2)
   if x < 0: r.status = x; r.lastChar = 0; return false  # EOF or stream error
@@ -303,7 +304,11 @@ proc readFastx*[T](f: var Bufio[T], r: var FQRecord): bool {.discardable.} =
     f.readUntil(r.sequence, c, -1, r.sequence.len)  # read the rest of the seq line
   r.status = r.sequence.len   # for normal records, this keeps the sequence length
   if x == int('>') or x == int('@'): r.lastChar = x
-  if x != int('+'): return true
+  if x != int('+'):
+    if headerChar == int('@'):
+      r.status = -4
+      return false
+    return true
   while true:         # skip the rest of the "+" line
     x = f.readByte()
     if x < 0 or x == int('\n'): break

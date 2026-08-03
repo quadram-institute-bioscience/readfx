@@ -151,7 +151,7 @@ typedef struct __kstring_t {
 	__KS_GETC(__read, __bufsize)				\
 	__KS_GETUNTIL(__read, __bufsize)
 
-#define kseq_rewind(ks) ((ks)->last_char = (ks)->f->is_eof = (ks)->f->begin = (ks)->f->end = 0)
+#define kseq_rewind(ks) ((ks)->curr_char = (ks)->last_char = (ks)->f->is_eof = (ks)->f->begin = (ks)->f->end = 0)
 
 #define __KSEQ_BASIC(SCOPE, type_t)										\
 	SCOPE kseq_t *kseq_init(type_t fd)									\
@@ -184,6 +184,7 @@ typedef struct __kstring_t {
 			if (c < 0) return c; /* end of file or error*/ \
 			seq->last_char = c; \
 		} /* else: the first header char has been read in the previous call */ \
+		seq->curr_char = seq->last_char; \
 		seq->comment.l = seq->seq.l = seq->qual.l = 0; /* reset all members */ \
 		if ((r=ks_getuntil(ks, 0, &seq->name, &c)) < 0) return r;  /* normal exit: EOF or error */ \
 		if (c != '\n') ks_getuntil(ks, KS_SEP_LINE, &seq->comment, 0); /* read FASTA/Q comment */ \
@@ -220,7 +221,7 @@ typedef struct __kstring_t {
 #define __KSEQ_TYPE(type_t)						\
 	typedef struct {							\
 		kstring_t name, comment, seq, qual;		\
-		int last_char;							\
+		int last_char, curr_char;				\
 		kstream_t *f;							\
 	} kseq_t;
 

@@ -17,6 +17,24 @@ proc checkPtrLengths(rec: FQRecordPtr) =
   check rec.sequenceLen == cstrOrEmpty(rec.sequence).len
   check rec.qualityLen == cstrOrEmpty(rec.quality).len
 
+type PairSummary = tuple[name1, name2: string, totalLen: int]
+
+proc slurpPairPtr(path1, path2: string): seq[PairSummary] =
+  for pair in readFQPairPtr(path1, path2):
+    result.add((
+      cstrOrEmpty(pair.read1.name),
+      cstrOrEmpty(pair.read2.name),
+      pair.read1.sequenceLen + pair.read2.sequenceLen
+    ))
+
+proc slurpInterleavedPtr(path: string): seq[PairSummary] =
+  for pair in readFQInterleavedPairPtr(path):
+    result.add((
+      cstrOrEmpty(pair.read1.name),
+      cstrOrEmpty(pair.read2.name),
+      pair.read1.sequenceLen + pair.read2.sequenceLen
+    ))
+
 proc writeTempInterleavedGzip(srcPath: string): string =
   result = getTempDir() / "readfx_interleaved.fastq.gz"
   if fileExists(result):
@@ -36,6 +54,18 @@ proc writeTempInterleavedGzip(srcPath: string): string =
   w.close()
 
 suite "Paired-end reading tests":
+
+  test "regression: paired readers can read the same files twice":
+    let expected = slurpPairPtr("./tests/test_R1.fq", "./tests/test_R2.fq")
+    check expected.len > 0
+    check slurpPairPtr("./tests/test_R1.fq", "./tests/test_R2.fq") == expected
+    check slurpPairPtr("./tests/test_R1.fq", "./tests/test_R2.fq") == expected
+
+  test "regression: interleaved reader can read the same file twice":
+    let expected = slurpInterleavedPtr("./tests/test_interleaved.fq")
+    check expected.len > 0
+    check slurpInterleavedPtr("./tests/test_interleaved.fq") == expected
+    check slurpInterleavedPtr("./tests/test_interleaved.fq") == expected
 
   test "readFQPairPtr basic functionality (uncompressed synthetic data)":
     var count = 0
