@@ -67,7 +67,7 @@ type
     last_char: cint
     curr_char: cint
     f: ptr kstream_t
-  gzFile = pointer
+  KseqGzFile = pointer
 
 # ------------------------------------------------------------------
 # Private zlib bindings for the kseq C wrapper.
@@ -82,11 +82,11 @@ elif defined(macosx):
 else:
   const libz = "libz.so.1"
 
-proc gzopen(path: cstring, mode: cstring): gzFile{.cdecl, dynlib: libz,
+proc gzopen(path: cstring, mode: cstring): KseqGzFile{.cdecl, dynlib: libz,
     importc: "gzopen".}
-proc gzdopen(fd: int32, mode: cstring): gzFile{.cdecl, dynlib: libz,
+proc gzdopen(fd: int32, mode: cstring): KseqGzFile{.cdecl, dynlib: libz,
     importc: "gzdopen".}
-proc gzclose(thefile: gzFile): int32{.cdecl, dynlib: libz, importc: "gzclose".}
+proc gzclose(thefile: KseqGzFile): int32{.cdecl, dynlib: libz, importc: "gzclose".}
 
 ## Initialize a kseq parser handle from an open gzFile stream.
 ##
@@ -95,7 +95,7 @@ proc gzclose(thefile: gzFile): int32{.cdecl, dynlib: libz, importc: "gzclose".}
 ##
 ## Returns:
 ##   Pointer to an initialized parser state
-proc kseq_init*(fp: gzFile): ptr kseq_t {.header: kseqh, importc: "kseq_init".}
+proc kseq_init*(fp: KseqGzFile): ptr kseq_t {.header: kseqh, importc: "kseq_init".}
 
 
 ## Reset parser state to the beginning of the input stream.
@@ -121,7 +121,7 @@ proc kseq_read*(seq: ptr kseq_t): cint {.header: kseqh, importc: "kseq_read".}
 ##   seq: Parser state previously created with `kseq_init`
 proc kseq_destroy*(seq: ptr kseq_t) {.header: kseqh, importc: "kseq_destroy".}
 
-proc openGzForRead(path: string): GzFile =
+proc openGzForRead(path: string): KseqGzFile =
   if path == "-":
     when defined(posix):
       let stdinDup = posix.dup(0)
@@ -338,7 +338,7 @@ iterator readFQ*(path: string): FQRecord =
 ##   IOError: If files cannot be opened or have mismatched lengths
 ##   ValueError: If checkNames is true and read names don't match
 iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false): FQPairPtr =
-  var fp1, fp2: GzFile
+  var fp1, fp2: KseqGzFile
 
   fp1 = openGzForRead(path1)
 

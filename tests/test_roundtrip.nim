@@ -290,11 +290,13 @@ test "truncation fuzz: truncated gzip stream degrades cleanly":
     var r: FQRecord
     var f = xopen[GzFile](truncPath)
     var m = 0
-    while f.readFastx(r):
-      inc m
-    check m <= 20
-    check r.status < 0               # EOF or stream error, never a crash
-    f.close()
+    try:
+      expect IOError:
+        while f.readFastx(r):
+          inc m
+      check m <= 20
+    finally:
+      f.close()
     removeFile(truncPath)
 
   removeFile(srcPath)

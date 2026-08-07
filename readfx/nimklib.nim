@@ -3,7 +3,7 @@
 ## Based on the "BioFast" repository by Heng Li (https://github.com/lh3/biofast)
 ##
 ## This module is the canonical home of:
-## * `GzFile`: minimal zlib file handle used for transparent gzip/plain I/O
+## * `GzFile`: gzip/plain input handle used for transparent FASTX I/O
 ## * `Bufio[T]`: generic buffered reader
 ## * `readFastx`: native Nim FASTA/FASTQ record parser
 ## * `Interval[S,T]`: implicit interval tree for genomic overlap queries
@@ -12,61 +12,330 @@
 ## over importing this module directly.
 
 import os, algorithm
+import std/[streams, strutils]
+import gzfast except open
 import seqtypes
 
 const klibVer* = "0.2"
 
-#################
-# gzip file I/O #
-#################
+################
+# FASTX file I/O #
+################
 
 when defined(windows):
-  const libz = "zlib1.dll"
   const libc = "msvcrt.dll"  # memchr lives in the MS C runtime
 elif defined(macosx):
-  const libz = "libz.dylib"
   const libc = "libc.dylib"
 else:
-  const libz = "libz.so.1"
   const libc = "libc.so.6"
 
-type
-  gzFile = pointer
-  GzFile* = gzFile
+const GzipMagic = "\x1f\x8b"
 
-proc gzopen(path: cstring, mode: cstring): gzFile{.cdecl, dynlib: libz,
-    importc: "gzopen".}
-proc gzdopen(fd: int32, mode: cstring): gzFile{.cdecl, dynlib: libz,
-    importc: "gzdopen".}
-proc gzread(thefile: gzFile, buf: pointer, length: int): int32{.cdecl,
-    dynlib: libz, importc: "gzread".}
-proc gzclose(thefile: gzFile): int32{.cdecl, dynlib: libz, importc: "gzclose".}
+const
+  # Compile-time knobs for benchmarking the gzfast-backed native reader.
+  readfxGzfastThreads* {.intdefine.}: int = 0
+  readfxGzfastDecodedChunkSize* {.intdefine.}: int = 4 * 1024 * 1024
+  readfxGzfastInputPageSize* {.intdefine.}: int = 1024 * 1024
+
+type
+  GzFileKind = enum
+    gfClosed,
+    gfPlain,
+    gfGzip
+
+  PrefixFileStream = ref object of StreamObj
+    file: File
+    prefix: string
+    prefixPos: int
+    closed: bool
+    ownsFile: bool
+
+  GzFile* = object
+    kind: GzFileKind
+    path: string
+    plainFile: File
+    plainPrefix: string
+    plainPrefixPos: int
+    ownsPlainFile: bool
+    gzipStream: GzFastStream
+    gzipSpan: DecodedSpan
+    gzipSpanPos: int
+    gzipFinished: bool
+
+proc readPrefix(file: File, maxLen: int): string =
+  if maxLen <= 0:
+    return ""
+  result = newString(maxLen)
+  let n = file.readBuffer(addr result[0], maxLen)
+  if n < 0:
+    raise newException(IOError, "error reading input prefix")
+  result.setLen(n)
+
+proc hasGzipMagic(prefix: string): bool {.inline.} =
+  prefix.len >= 2 and prefix[0] == GzipMagic[0] and prefix[1] == GzipMagic[1]
+
+proc fileHasGzipMagic(path: string): bool =
+  var file: File
+  if not open(file, path, fmRead):
+    raise newException(IOError, "error opening " & path)
+  try:
+    file.readPrefix(2).hasGzipMagic()
+  finally:
+    file.close()
+
+proc gzfastConfig(bufferSize: int): GzFastConfig =
+  result = defaultGzFastConfig()
+  result.threads = readfxGzfastThreads
+  result.decodedChunkSize = max(readfxGzfastDecodedChunkSize, max(bufferSize, 4096))
+  result.inputPageSize = max(readfxGzfastInputPageSize, 4096)
+  if result.maxSpeculativeOutput < result.decodedChunkSize:
+    result.maxSpeculativeOutput = result.decodedChunkSize
+  result.validate()
+
+proc pfsReadData(s: Stream; buffer: pointer; bufLen: int): int
+    {.nimcall, gcsafe, tags: [ReadIOEffect], raises: [IOError].} =
+  let ps = PrefixFileStream(s)
+  if ps.closed:
+    raise newException(IOError, "input stream is closed")
+  if bufLen <= 0:
+    return 0
+
+  var written = 0
+  if ps.prefixPos < ps.prefix.len:
+    let n = min(bufLen, ps.prefix.len - ps.prefixPos)
+    copyMem(buffer, addr ps.prefix[ps.prefixPos], n)
+    ps.prefixPos += n
+    written += n
+
+  if written < bufLen:
+    let dst = cast[pointer](cast[uint](buffer) + written.uint)
+    let n = ps.file.readBuffer(dst, bufLen - written)
+    if n < 0:
+      raise newException(IOError, "error reading input stream")
+    written += n
+
+  result = written
+
+proc pfsReadDataStr(s: Stream; buffer: var string; slice: Slice[int]): int
+    {.nimcall, gcsafe, tags: [ReadIOEffect], raises: [IOError].} =
+  if slice.b < slice.a:
+    return 0
+  if buffer.len <= slice.b:
+    buffer.setLen(slice.b + 1)
+  result = pfsReadData(s, addr buffer[slice.a], slice.b - slice.a + 1)
+
+proc pfsAtEnd(s: Stream): bool
+    {.nimcall, gcsafe, tags: [ReadIOEffect], raises: [].} =
+  let ps = PrefixFileStream(s)
+  if ps.closed:
+    return true
+  if ps.prefixPos < ps.prefix.len:
+    return false
+  result = ps.file.endOfFile()
+
+proc pfsClose(s: Stream)
+    {.nimcall, gcsafe, tags: [WriteIOEffect], raises: [].} =
+  let ps = PrefixFileStream(s)
+  if not ps.closed:
+    ps.closed = true
+    if ps.ownsFile:
+      ps.file.close()
+
+proc pfsUnsupported(s: Stream; pos: int)
+    {.nimcall, gcsafe, tags: [], raises: [IOError].} =
+  raise newException(IOError, "input stream is forward-only")
+
+proc pfsUnsupportedPos(s: Stream): int
+    {.nimcall, gcsafe, tags: [], raises: [IOError].} =
+  raise newException(IOError, "input stream is forward-only")
+
+proc pfsUnsupportedPeek(s: Stream; buffer: pointer; bufLen: int): int
+    {.nimcall, gcsafe, tags: [ReadIOEffect], raises: [IOError].} =
+  raise newException(IOError, "input stream does not support peeking")
+
+proc pfsUnsupportedWrite(s: Stream; buffer: pointer; bufLen: int)
+    {.nimcall, gcsafe, tags: [WriteIOEffect], raises: [IOError].} =
+  raise newException(IOError, "input stream is read-only")
+
+proc pfsFlush(s: Stream)
+    {.nimcall, gcsafe, tags: [WriteIOEffect], raises: [].} =
+  discard
+
+proc newPrefixFileStream(file: File; prefix: string;
+    ownsFile: bool): PrefixFileStream =
+  result = PrefixFileStream(file: file, prefix: prefix, ownsFile: ownsFile)
+  result.readDataImpl = pfsReadData
+  result.readDataStrImpl = pfsReadDataStr
+  result.atEndImpl = cast[typeof(result.atEndImpl)](pfsAtEnd)
+  result.closeImpl = pfsClose
+  result.setPositionImpl = pfsUnsupported
+  result.getPositionImpl = pfsUnsupportedPos
+  result.peekDataImpl = pfsUnsupportedPeek
+  result.writeDataImpl = pfsUnsupportedWrite
+  result.flushImpl = pfsFlush
+
+proc openPlain(f: var GzFile; file: File; prefix: string; ownsFile: bool;
+    path: string) =
+  f.kind = gfPlain
+  f.path = path
+  f.plainFile = file
+  f.plainPrefix = prefix
+  f.plainPrefixPos = 0
+  f.ownsPlainFile = ownsFile
+  f.gzipStream = nil
+  f.gzipSpan = DecodedSpan(data: nil, len: 0)
+  f.gzipSpanPos = 0
+  f.gzipFinished = false
+
+proc openGzip(f: var GzFile; path: string; bufferSize: int) =
+  f.kind = gfGzip
+  f.path = path
+  f.plainFile = nil
+  f.plainPrefix.setLen(0)
+  f.plainPrefixPos = 0
+  f.ownsPlainFile = false
+  f.gzipStream = gzfast.open(initGzFastDecoder(gzfastConfig(bufferSize)), path)
+  f.gzipSpan = DecodedSpan(data: nil, len: 0)
+  f.gzipSpanPos = 0
+  f.gzipFinished = false
+
+proc openGzip(f: var GzFile; file: File; prefix: string; ownsFile: bool;
+    path: string; bufferSize: int) =
+  f.kind = gfGzip
+  f.path = path
+  f.plainFile = nil
+  f.plainPrefix.setLen(0)
+  f.plainPrefixPos = 0
+  f.ownsPlainFile = false
+  f.gzipStream = openGzFastSequential(
+    newPrefixFileStream(file, prefix, ownsFile),
+    gzfastConfig(bufferSize)
+  )
+  f.gzipSpan = DecodedSpan(data: nil, len: 0)
+  f.gzipSpanPos = 0
+  f.gzipFinished = false
 
 proc open(f: var GzFile, fn: string,
-    mode: FileMode = fmRead): int {.discardable.} =
-  assert(mode == fmRead or mode == fmWrite)
+    mode: FileMode = fmRead, bufferSize: int = 0x10000): int {.discardable.} =
+  assert(mode == fmRead)
   result = 0
   if fn == "-" or fn == "":
-    if mode == fmRead: f = gzdopen(0, cstring("r"))
-    elif mode == fmWrite: f = gzdopen(1, cstring("w"))
+    let prefix = stdin.readPrefix(2)
+    if prefix.hasGzipMagic():
+      f.openGzip(stdin, prefix, ownsFile = false, path = "stdin", bufferSize)
+    else:
+      f.openPlain(stdin, prefix, ownsFile = false, path = "stdin")
   else:
-    if mode == fmRead: f = gzopen(cstring(fn), cstring("r"))
-    elif mode == fmWrite: f = gzopen(cstring(fn), cstring("w"))
-  if f == nil:
-    result = -1
-    raise newException(IOError, "error opening " & fn)
+    let gzipInput = fn.endsWith(".gz") or fn.fileHasGzipMagic()
+    if gzipInput:
+      f.openGzip(fn, bufferSize)
+    else:
+      var file: File
+      if not open(file, fn, fmRead):
+        result = -1
+        raise newException(IOError, "error opening " & fn)
+      f.openPlain(file, "", ownsFile = true, path = fn)
 
 proc close(f: var GzFile): int {.discardable.} =
-  if f != nil:
-    result = int(gzclose(f))
-    f = nil
-  else: result = 0
+  result = 0
+  case f.kind
+  of gfPlain:
+    if f.ownsPlainFile and f.plainFile != nil:
+      f.plainFile.close()
+  of gfGzip:
+    if not f.gzipStream.isNil:
+      f.gzipStream.close()
+  of gfClosed:
+    discard
+  f.kind = gfClosed
+  f.path.setLen(0)
+  f.plainFile = nil
+  f.plainPrefix.setLen(0)
+  f.plainPrefixPos = 0
+  f.ownsPlainFile = false
+  f.gzipStream = nil
+  f.gzipSpan = DecodedSpan(data: nil, len: 0)
+  f.gzipSpanPos = 0
+  f.gzipFinished = false
 
 proc read(f: var GzFile, buf: var string, sz: int, offset: int = 0):
-    int {.discardable.} =
-  if buf.len < offset + sz: buf.setLen(offset + sz)
-  result = gzread(f, buf[offset].addr, buf.len)
-  buf.setLen(result)
+    int {.discardable, inline.} =
+  if sz <= 0:
+    if buf.len < offset:
+      buf.setLen(offset)
+    return 0
+  if buf.len < offset + sz:
+    buf.setLen(offset + sz)
+
+  case f.kind
+  of gfPlain:
+    var written = 0
+    if f.plainPrefixPos < f.plainPrefix.len:
+      let n = min(sz, f.plainPrefix.len - f.plainPrefixPos)
+      copyMem(addr buf[offset], addr f.plainPrefix[f.plainPrefixPos], n)
+      f.plainPrefixPos += n
+      written += n
+    if written < sz:
+      let n = f.plainFile.readBuffer(addr buf[offset + written], sz - written)
+      if n < 0:
+        buf.setLen(offset + written)
+        return -1
+      written += n
+    result = written
+    buf.setLen(offset + result)
+  of gfGzip:
+    result = f.gzipStream.readData(addr buf[offset], sz)
+    buf.setLen(offset + result)
+    if result == 0 and not f.gzipFinished:
+      discard f.gzipStream.finish()
+      f.gzipFinished = true
+  of gfClosed:
+    raise newException(IOError, "input stream is closed")
+
+proc finishGzipAtEnd(f: var GzFile) {.inline.} =
+  if not f.gzipFinished:
+    discard f.gzipStream.finish()
+    f.gzipFinished = true
+
+proc currentGzipSpan(f: var GzFile): DecodedSpan {.inline.} =
+  let available = f.gzipSpan.len - f.gzipSpanPos
+  if available <= 0:
+    return DecodedSpan(data: nil, len: 0)
+  DecodedSpan(
+    data: cast[ptr UncheckedArray[byte]](
+      cast[uint](f.gzipSpan.data) + uint(f.gzipSpanPos)
+    ),
+    len: available
+  )
+
+proc clearGzipSpan(f: var GzFile) {.inline.} =
+  f.gzipSpan = DecodedSpan(data: nil, len: 0)
+  f.gzipSpanPos = 0
+
+proc peekGzipDecoded(f: var GzFile): DecodedSpan {.inline.} =
+  if f.kind != gfGzip or f.gzipStream.isNil:
+    raise newException(IOError, "gzip stream is not open")
+  result = f.currentGzipSpan()
+  if result.len > 0:
+    return
+  if f.gzipFinished:
+    return DecodedSpan(data: nil, len: 0)
+  f.gzipSpan = f.gzipStream.peekDecoded()
+  f.gzipSpanPos = 0
+  result = f.currentGzipSpan()
+  if result.len == 0:
+    f.clearGzipSpan()
+    f.finishGzipAtEnd()
+
+proc consumeGzipDecoded(f: var GzFile; n: int) {.inline.} =
+  let available = f.gzipSpan.len - f.gzipSpanPos
+  if n < 0 or n > available:
+    raise newException(ValueError,
+      "consumeDecoded count exceeds available decoded bytes")
+  f.gzipSpanPos += n
+  if f.gzipSpanPos == f.gzipSpan.len and f.gzipSpan.len > 0:
+    f.gzipStream.consumeDecoded(f.gzipSpan.len)
+    f.clearGzipSpan()
 
 ###################
 # Buffered reader #
@@ -97,7 +366,10 @@ type
 proc open*[T](f: var Bufio[T], fn: string, mode: FileMode = fmRead,
     sz: int = 0x10000): int {.discardable.} =
   assert(mode == fmRead) # only fmRead is supported for now
-  result = f.fp.open(fn, mode)
+  when T is GzFile:
+    result = f.fp.open(fn, mode, sz)
+  else:
+    result = f.fp.open(fn, mode)
   (f.st, f.en, f.sz, f.EOF) = (0, 0, sz, false)
   f.buf.setLen(sz)
 
@@ -126,6 +398,13 @@ proc xopen*[T](fn: string, mode: FileMode = fmRead,
 proc close*[T](f: var Bufio[T]): int {.discardable.} =
   return f.fp.close()
 
+proc refill[T](f: var Bufio[T]): int {.inline.} =
+  f.st = 0
+  f.en = f.fp.read(f.buf, f.sz)
+  if f.en <= 0:
+    f.EOF = true
+  result = f.en
+
 ## Report whether buffered reader has reached end-of-file.
 ##
 ## Args:
@@ -133,7 +412,7 @@ proc close*[T](f: var Bufio[T]): int {.discardable.} =
 ##
 ## Returns:
 ##   `true` when no more bytes can be read
-proc eof*[T](f: Bufio[T]): bool {.noSideEffect.} =
+proc eof*[T](f: Bufio[T]): bool {.noSideEffect, inline.} =
   result = (f.EOF and f.st >= f.en)
 
 ## Read a single byte from the buffered reader.
@@ -145,12 +424,23 @@ proc eof*[T](f: Bufio[T]): bool {.noSideEffect.} =
 ##   Byte value (0..255) on success, or:
 ##   - `-1`: EOF
 ##   - `-2`: stream read error
-proc readByte*[T](f: var Bufio[T]): int =
+proc readByte*[T](f: var Bufio[T]): int {.inline.} =
+  when T is GzFile:
+    if f.fp.kind == gfGzip:
+      if f.EOF: return -1
+      let span = f.fp.peekGzipDecoded()
+      if span.len == 0:
+        f.EOF = true
+        return -1
+      result = int(span.data[0])
+      f.fp.consumeGzipDecoded(1)
+      return
+
   if f.EOF and f.st >= f.en: return -1
   if f.st >= f.en:
-    (f.st, f.en) = (0, f.fp.read(f.buf, f.sz))
-    if f.en == 0: f.EOF = true; return -1
-    if f.en < 0: f.EOF = true; return -2
+    let n = f.refill()
+    if n == 0: return -1
+    if n < 0: return -2
   result = int(f.buf[f.st])
   f.st += 1
 
@@ -166,6 +456,26 @@ proc readByte*[T](f: var Bufio[T]): int =
 ##   Number of bytes written into `buf`
 proc read*[T](f: var Bufio[T], buf: var string, sz: int,
     offset: int = 0): int {.discardable.} =
+  when T is GzFile:
+    if f.fp.kind == gfGzip:
+      if f.EOF:
+        return 0
+      buf.setLen(offset)
+      var off = offset
+      var rest = sz
+      while rest > 0:
+        let span = f.fp.peekGzipDecoded()
+        if span.len == 0:
+          f.EOF = true
+          break
+        let n = min(rest, span.len)
+        if buf.len < off + n: buf.setLen(off + n)
+        copyMem(addr buf[off], span.data, n)
+        f.fp.consumeGzipDecoded(n)
+        off += n
+        rest -= n
+      return off - offset
+
   if f.EOF and f.st >= f.en: return 0
   buf.setLen(offset)
   var off = offset
@@ -177,9 +487,12 @@ proc read*[T](f: var Bufio[T], buf: var string, sz: int,
       copyMem(buf[off].addr, f.buf[f.st].addr, l)
       rest -= l
       off += l
-    (f.st, f.en) = (0, f.fp.read(f.buf, f.sz))
-    if f.en < f.sz: f.EOF = true
-    if f.en == 0: return off - offset
+    let n = f.refill()
+    if n == 0: return off - offset
+    if n < 0:
+      if off > offset:
+        return off - offset
+      return -2
   if buf.len < off + rest: buf.setLen(off + rest)
   copyMem(buf[off].addr, f.buf[f.st].addr, rest)
   f.st += rest
@@ -187,6 +500,60 @@ proc read*[T](f: var Bufio[T], buf: var string, sz: int,
 
 proc memchr(buf: pointer, c: cint, sz: csize_t): pointer {.cdecl, dynlib: libc,
     importc: "memchr".}
+
+proc findDelimiter(span: DecodedSpan; delim: int): int {.inline.} =
+  result = span.len
+  if span.len <= 0:
+    return
+  if delim == -1:
+    let p = memchr(span.data, cint(0x0a), csize_t(span.len))
+    if p != nil:
+      result = int(cast[uint](p) - cast[uint](span.data))
+  elif delim == -2:
+    for i in 0..<span.len:
+      let b = span.data[i]
+      if b == 0x09'u8 or b == 0x20'u8 or b == 0x0a'u8 or b == 0x0d'u8:
+        return i
+  else:
+    let p = memchr(span.data, cint(delim), csize_t(span.len))
+    if p != nil:
+      result = int(cast[uint](p) - cast[uint](span.data))
+
+proc appendSpan(buf: var string; off: var int; span: DecodedSpan; n: int)
+    {.inline.} =
+  if n <= 0:
+    return
+  if buf.len < off + n:
+    buf.setLen(off + n)
+  copyMem(addr buf[off], span.data, n)
+  off += n
+
+proc readUntilGzip(f: var Bufio[GzFile], buf: var string, dret: var char;
+    delim: int = -1, offset: int = 0): int {.discardable, inline.} =
+  if f.EOF:
+    return -1
+  buf.setLen(offset)
+  var off = offset
+  var gotany = false
+  while true:
+    let span = f.fp.peekGzipDecoded()
+    if span.len == 0:
+      f.EOF = true
+      break
+    let x = findDelimiter(span, delim)
+    gotany = true
+    appendSpan(buf, off, span, x)
+    if x < span.len:
+      dret = char(span.data[x])
+      f.fp.consumeGzipDecoded(x + 1)
+      break
+    f.fp.consumeGzipDecoded(span.len)
+  if not gotany and f.EOF:
+    return -1
+  if delim == -1 and off > 0 and buf[off - 1] == '\r':
+    off -= 1
+    buf.setLen(off)
+  return off - offset
 
 ## Read from buffered stream until a delimiter or EOF.
 ##
@@ -206,7 +573,11 @@ proc memchr(buf: pointer, c: cint, sz: csize_t): pointer {.cdecl, dynlib: libc,
 ##   - `-2`: stream read error
 ##   - `-3`: internal buffered-state error
 proc readUntil*[T](f: var Bufio[T], buf: var string, dret: var char,
-    delim: int = -1, offset: int = 0): int {.discardable.} =
+    delim: int = -1, offset: int = 0): int {.discardable, inline.} =
+  when T is GzFile:
+    if f.fp.kind == gfGzip:
+      return readUntilGzip(f, buf, dret, delim, offset)
+
   if f.EOF and f.st >= f.en: return -1
   buf.setLen(offset)
   var off = offset
@@ -215,12 +586,9 @@ proc readUntil*[T](f: var Bufio[T], buf: var string, dret: var char,
     if f.en < 0: return -3
     if f.st >= f.en: # buffer is empty
       if not f.EOF:
-        (f.st, f.en) = (0, f.fp.read(f.buf, f.sz))
-        if f.en < f.sz: f.EOF = true
-        if f.en == 0: break
-        if f.en < 0:
-          f.EOF = true
-          return -2
+        let n = f.refill()
+        if n == 0: break
+        if n < 0: return -2
       else: break
     var x: int = f.en
     if delim == -1: # read a line
@@ -258,7 +626,7 @@ proc readUntil*[T](f: var Bufio[T], buf: var string, dret: var char,
 ##
 ## Returns:
 ##   `true` if a line was read, `false` on EOF/error
-proc readLine*[T](f: var Bufio[T], buf: var string): bool {.discardable.} =
+proc readLine*[T](f: var Bufio[T], buf: var string): bool {.discardable, inline.} =
   var dret: char
   var ret = readUntil(f, buf, dret)
   return if ret >= 0: true else: false

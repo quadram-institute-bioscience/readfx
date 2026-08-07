@@ -5,7 +5,7 @@ author        = "Andreas Wilm and SeqFu team"
 description   = "Parse FASTQ and FASTA files, using Heng Li's Klib"
 license       = "MIT"
 
-requires "nim >= 1.0", "zip >= 0.2.1"
+requires "nim >= 2.2.0", "zip >= 0.2.1", "gzfast >= 0.1.0"
 
 skipDirs = @["tests"]
 
