@@ -425,16 +425,17 @@ proc eof*[T](f: Bufio[T]): bool {.noSideEffect, inline.} =
 ##   - `-1`: EOF
 ##   - `-2`: stream read error
 proc readByte*[T](f: var Bufio[T]): int {.inline.} =
-  when T is GzFile:
-    if f.fp.kind == gfGzip:
-      if f.EOF: return -1
-      let span = f.fp.peekGzipDecoded()
-      if span.len == 0:
-        f.EOF = true
-        return -1
-      result = int(span.data[0])
-      f.fp.consumeGzipDecoded(1)
-      return
+  when not defined(readfxDisableGzfastSpans):
+    when T is GzFile:
+      if f.fp.kind == gfGzip:
+        if f.EOF: return -1
+        let span = f.fp.peekGzipDecoded()
+        if span.len == 0:
+          f.EOF = true
+          return -1
+        result = int(span.data[0])
+        f.fp.consumeGzipDecoded(1)
+        return
 
   if f.EOF and f.st >= f.en: return -1
   if f.st >= f.en:
@@ -456,25 +457,26 @@ proc readByte*[T](f: var Bufio[T]): int {.inline.} =
 ##   Number of bytes written into `buf`
 proc read*[T](f: var Bufio[T], buf: var string, sz: int,
     offset: int = 0): int {.discardable.} =
-  when T is GzFile:
-    if f.fp.kind == gfGzip:
-      if f.EOF:
-        return 0
-      buf.setLen(offset)
-      var off = offset
-      var rest = sz
-      while rest > 0:
-        let span = f.fp.peekGzipDecoded()
-        if span.len == 0:
-          f.EOF = true
-          break
-        let n = min(rest, span.len)
-        if buf.len < off + n: buf.setLen(off + n)
-        copyMem(addr buf[off], span.data, n)
-        f.fp.consumeGzipDecoded(n)
-        off += n
-        rest -= n
-      return off - offset
+  when not defined(readfxDisableGzfastSpans):
+    when T is GzFile:
+      if f.fp.kind == gfGzip:
+        if f.EOF:
+          return 0
+        buf.setLen(offset)
+        var off = offset
+        var rest = sz
+        while rest > 0:
+          let span = f.fp.peekGzipDecoded()
+          if span.len == 0:
+            f.EOF = true
+            break
+          let n = min(rest, span.len)
+          if buf.len < off + n: buf.setLen(off + n)
+          copyMem(addr buf[off], span.data, n)
+          f.fp.consumeGzipDecoded(n)
+          off += n
+          rest -= n
+        return off - offset
 
   if f.EOF and f.st >= f.en: return 0
   buf.setLen(offset)
@@ -574,9 +576,10 @@ proc readUntilGzip(f: var Bufio[GzFile], buf: var string, dret: var char;
 ##   - `-3`: internal buffered-state error
 proc readUntil*[T](f: var Bufio[T], buf: var string, dret: var char,
     delim: int = -1, offset: int = 0): int {.discardable, inline.} =
-  when T is GzFile:
-    if f.fp.kind == gfGzip:
-      return readUntilGzip(f, buf, dret, delim, offset)
+  when not defined(readfxDisableGzfastSpans):
+    when T is GzFile:
+      if f.fp.kind == gfGzip:
+        return readUntilGzip(f, buf, dret, delim, offset)
 
   if f.EOF and f.st >= f.en: return -1
   buf.setLen(offset)

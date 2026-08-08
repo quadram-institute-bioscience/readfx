@@ -1,0 +1,7 @@
+# Enforce LF line endings for text files on all platforms.
+# Test fixtures (.fq/.fa) are checksummed by the test suite; CRLF
+# conversion on Windows checkouts would break those tests.
+* text=auto eol=lf
+
+# Compressed/binary fixtures
+*.gz binary
