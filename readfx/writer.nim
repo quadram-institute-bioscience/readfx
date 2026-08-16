@@ -24,10 +24,9 @@
 ##
 ## w.writeRecord(FQRecord(name: "r1", sequence: "ACGT", quality: "IIII"))
 ## ```
-import zip/zlib
 import std/[os, osproc, streams]
-when defined(posix):
-  import posix
+from gzfast import GzFastWriter, GzFastWriteConfig, defaultGzFastWriteConfig,
+  openGzFastWriter, writeData, flush, close
 
 import ../readfx/seqtypes
 
@@ -77,7 +76,7 @@ type
     isOpen*: bool
     backend: FastxBackend
     plainFile: File
-    gzFile: GzFile
+    gzWriter: GzFastWriter
     pigzProc: Process
     pigzInput: Stream
     ownsPlainHandle: bool
@@ -120,31 +119,21 @@ proc ensureOpen(w: FastxWriter) =
 proc writeChunkPlain(w: var FastxWriter, data: string) =
   if data.len == 0:
     return
-  let written = writeBuffer(w.plainFile, cast[pointer](data.cstring), data.len)
+  let written = writeBuffer(w.plainFile, cast[pointer](unsafeAddr data[0]), data.len)
   if written != data.len:
     raise newException(IOError, "Short write on plain output stream")
-
-proc zlibErrorMessage(w: FastxWriter): string =
-  var errNo: cint
-  let msg = gzerror(w.gzFile, errNo)
-  if msg != nil:
-    result = $cast[cstring](msg)
-  else:
-    result = "zlib error code " & $errNo
 
 proc writeChunkGzip(w: var FastxWriter, data: string) =
   if data.len == 0:
     return
-  let written = gzwrite(w.gzFile, cast[pointer](data.cstring), cuint(data.len))
-  if written < 0 or written != cint(data.len):
-    raise newException(IOError, "gzwrite failed: " & zlibErrorMessage(w))
+  discard w.gzWriter.writeData(cast[pointer](unsafeAddr data[0]), data.len)
 
 proc writeChunkPigz(w: var FastxWriter, data: string) =
   if data.len == 0:
     return
   if w.pigzInput.isNil:
     raise newException(IOError, "pigz input stream is not available")
-  w.pigzInput.writeData(cast[pointer](data.cstring), data.len)
+  w.pigzInput.writeData(cast[pointer](unsafeAddr data[0]), data.len)
 
 proc flush*(w: var FastxWriter) =
   ## Flush pending buffered bytes to the destination stream.
@@ -345,10 +334,8 @@ proc close*(w: var FastxWriter) =
     elif w.plainFile != nil:
       flushFile(w.plainFile)
   of fxbGzip:
-    if w.gzFile != nil:
-      let rc = gzclose(w.gzFile)
-      if rc != Z_OK:
-        raise newException(IOError, "gzclose failed with code " & $rc)
+    if w.gzWriter != nil:
+      w.gzWriter.close()
   of fxbPigz:
     if w.pigzInput != nil:
       w.pigzInput.flush()
@@ -360,26 +347,15 @@ proc close*(w: var FastxWriter) =
         raise newException(IOError, "pigz exited with code " & $rc)
 
   w.plainFile = nil
-  w.gzFile = nil
+  w.gzWriter = nil
   w.pigzInput = nil
   w.pigzProc = nil
   w.isOpen = false
   w.outputBuffer.setLen(0)
 
-proc compressionMode(level: int): cstring =
-  case level
-  of 0: "wb0"
-  of 1: "wb1"
-  of 2: "wb2"
-  of 3: "wb3"
-  of 4: "wb4"
-  of 5: "wb5"
-  of 6: "wb6"
-  of 7: "wb7"
-  of 8: "wb8"
-  of 9: "wb9"
-  else:
-    "wb6"
+proc gzipWriterConfig(level: int): GzFastWriteConfig =
+  result = defaultGzFastWriteConfig()
+  result.level = level
 
 proc tryStartPigzWriter(w: var FastxWriter, destination: FastxDestination): bool =
   if destination.kind != fxdFile:
@@ -426,10 +402,10 @@ proc fastxWriter*(
   ##   compression: Enable gzip compression for output stream
   ##   destination: Output destination (stdout or file)
   ##   bufferSize: Application-level output buffer size in bytes
-  ##   compressionLevel: zlib compression level (0..9)
+  ##   compressionLevel: gzip compression level (0..9)
   ##   compressionThreads: Requested compression threads.
   ##     If `> 1`, the writer attempts to use `pigz` for file destinations and
-  ##     gracefully falls back to built-in zlib compression when `pigz` is not
+  ##     gracefully falls back to built-in gzfast compression when `pigz` is not
   ##     available or cannot be started.
   ##   fastaWidth: FASTA sequence line width (used only in FASTA mode)
   ##
@@ -462,27 +438,14 @@ proc fastxWriter*(
       discard
     else:
       result.backend = fxbGzip
-      let modeC = compressionMode(compressionLevel)
+      let config = gzipWriterConfig(compressionLevel)
       case destination.kind
       of fxdFile:
         if destination.path.len == 0:
           raise newException(ValueError, "Destination path cannot be empty")
-        var pathCopy = destination.path & '\0'
-        let pathC = cast[cstring](addr pathCopy[0])
-        result.gzFile = gzopen(pathC, modeC)
-        if result.gzFile == nil:
-          raise newException(IOError, "Cannot open gzip output: " & destination.path)
+        result.gzWriter = openGzFastWriter(destination.path, config)
       of fxdStdout:
-        when defined(posix):
-          let outDup = posix.dup(1)
-          if outDup < 0:
-            raise newException(IOError, "Cannot duplicate stdout for gzip output")
-          result.gzFile = gzdopen(cint(outDup), modeC)
-          if result.gzFile == nil:
-            discard posix.close(outDup)
-            raise newException(IOError, "Cannot open gzip stdout stream")
-        else:
-          raise newException(IOError, "Gzip stdout is only supported on POSIX platforms")
+        result.gzWriter = openGzFastWriter(stdout, config, ownsOutput = false)
   else:
     result.backend = fxbPlain
     case destination.kind

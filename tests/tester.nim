@@ -518,6 +518,72 @@ test "fastxWriter gzip FASTQ":
     check rec.quality == "IIIIII"
   check n == 1
 
+test "fastxWriter gzip stdout":
+  when defined(posix):
+    var pipeFds: array[2, cint]
+    check posix.pipe(pipeFds) == 0
+    var readFd = pipeFds[0]
+    var writeFd = pipeFds[1]
+    var savedStdout = posix.dup(1)
+    check savedStdout >= 0
+
+    var compressed = ""
+    let outPath = getTempDir() / "readfx_writer_stdout.fastq.gz"
+    if fileExists(outPath):
+      removeFile(outPath)
+
+    try:
+      flushFile(stdout)
+      check posix.dup2(writeFd, 1) >= 0
+      discard posix.close(writeFd)
+      writeFd = -1
+
+      var w = fastxWriter(
+        format = fxfFastq,
+        compression = true,
+        destination = stdoutDestination(),
+        bufferSize = 32,
+        compressionLevel = 6
+      )
+      w.writeRecord("stdout_gz", "ACGT", "IIII")
+      w.close()
+
+      check posix.dup2(savedStdout, 1) >= 0
+      discard posix.close(savedStdout)
+      savedStdout = -1
+
+      var chunk: array[1024, char]
+      while true:
+        let n = posix.read(readFd, addr chunk[0], chunk.len)
+        if n <= 0:
+          break
+        let oldLen = compressed.len
+        compressed.setLen(oldLen + int(n))
+        copyMem(addr compressed[oldLen], addr chunk[0], int(n))
+      discard posix.close(readFd)
+      readFd = -1
+
+      check compressed.len > 0
+      writeFile(outPath, compressed)
+
+      var n = 0
+      for rec in readFQ(outPath):
+        inc n
+        check rec.name == "stdout_gz"
+        check rec.sequence == "ACGT"
+        check rec.quality == "IIII"
+      check n == 1
+    finally:
+      if savedStdout >= 0:
+        discard posix.dup2(savedStdout, 1)
+        discard posix.close(savedStdout)
+      if writeFd >= 0:
+        discard posix.close(writeFd)
+      if readFd >= 0:
+        discard posix.close(readFd)
+      if fileExists(outPath):
+        removeFile(outPath)
+
 test "fastxWriter FASTA ignores quality":
   let outPath = getTempDir() / "readfx_writer.fasta"
   if fileExists(outPath):
