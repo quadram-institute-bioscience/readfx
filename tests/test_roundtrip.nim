@@ -209,6 +209,24 @@ test "corpus: readFastx reports malformed records with status -4":
     check r.status == -4
     f.close()
 
+test "corpus: corrupted gzip reports read error through kseq":
+  let path = tmpPath("readfx_corrupt.fq.gz")
+  writeFile(path, "\x1f\x8bnotgzip")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var raised = false
+  try:
+    discard slurp(path)
+  except IOError as e:
+    raised = true
+    check e.msg.contains("Error reading " & path & " at record 1: ")
+    check not e.msg.contains("kseq_read failed")
+  except CatchableError:
+    check false
+  check raised
+
 # ============================================================
 # Truncation fuzz: parsers must degrade, never crash
 # ============================================================

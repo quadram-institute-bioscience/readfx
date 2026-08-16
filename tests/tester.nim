@@ -81,7 +81,7 @@ test "(2) readFQPtr '-' keeps stdin open":
     check savedStdin >= 0
 
     let input = "@r1\nA\n+\nI\n"
-    discard posix.write(pipeFds[1], cast[pointer](input.cstring), input.len)
+    discard posix.write(pipeFds[1], cast[pointer](unsafeAddr input[0]), input.len)
     discard posix.close(pipeFds[1])
     check posix.dup2(pipeFds[0], 0) >= 0
     discard posix.close(pipeFds[0])
@@ -92,6 +92,35 @@ test "(2) readFQPtr '-' keeps stdin open":
         discard rec
         inc count
       check count == 1
+
+      let probe = posix.dup(0)
+      check probe >= 0
+      if probe >= 0:
+        discard posix.close(probe)
+    finally:
+      check posix.dup2(savedStdin, 0) >= 0
+      discard posix.close(savedStdin)
+
+test "(2) readFQPtr '-' supports gzip stdin":
+  when defined(posix):
+    var pipeFds: array[2, cint]
+    check posix.pipe(pipeFds) == 0
+    let savedStdin = posix.dup(0)
+    check savedStdin >= 0
+
+    let input = readFile("./tests/test.fasta.gz")
+    discard posix.write(pipeFds[1], cast[pointer](unsafeAddr input[0]), input.len)
+    discard posix.close(pipeFds[1])
+    check posix.dup2(pipeFds[0], 0) >= 0
+    discard posix.close(pipeFds[0])
+
+    var res = ""
+    var recs: seq[string]
+    try:
+      for rec in readFQPtr("-"):
+        recs.add($rec)
+      res = $recs.join("\n") & "\n"
+      check $toMD5($res) == "21aa45c3b9110a7df328680f8b8753e8"
 
       let probe = posix.dup(0)
       check probe >= 0

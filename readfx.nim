@@ -23,8 +23,6 @@
 ## ```
 ##
 import strutils
-when defined(posix):
-  import posix
 import readfx/seqtypes
 export seqtypes
 
@@ -42,10 +40,6 @@ export writer
 # https://forum.nim-lang.org/t/2668
 from os import splitPath
 const kseqh = currentSourcePath().splitPath.head & "/readfx/kseq.h"
-
-# https://github.com/nim-lang/nimble/issues/157
-{.passL: "-lz".}
-
 
 type
   kstring_t {.importc, header: kseqh.} = object
@@ -68,30 +62,43 @@ type
     curr_char: cint
     f: ptr kstream_t
   KseqGzFile = pointer
+  KseqGzHandleObj = object
+    file: GzFile
+    path: string
+    lastError: string
+    closed: bool
+  KseqGzHandle = ref KseqGzHandleObj
 
 # ------------------------------------------------------------------
-# Private zlib bindings for the kseq C wrapper.
+# Private gzfast-backed input shim for the kseq C wrapper.
 # The native Nim parser (`readFastx`, `Bufio`, `Interval`) and its own
 # GzFile handling live in readfx/nimklib.nim and are re-exported above.
 # ------------------------------------------------------------------
 
-when defined(windows):
-  const libz = "zlib1.dll"
-elif defined(macosx):
-  const libz = "libz.dylib"
-else:
-  const libz = "libz.so.1"
+proc asKseqFile(handle: KseqGzHandle): KseqGzFile {.inline.} =
+  cast[KseqGzFile](handle)
 
-proc gzopen(path: cstring, mode: cstring): KseqGzFile{.cdecl, dynlib: libz,
-    importc: "gzopen".}
-proc gzdopen(fd: int32, mode: cstring): KseqGzFile{.cdecl, dynlib: libz,
-    importc: "gzdopen".}
-proc gzclose(thefile: KseqGzFile): int32{.cdecl, dynlib: libz, importc: "gzclose".}
+proc readfx_gzfast_read(fp: KseqGzFile; buf: pointer; len: cint): cint
+    {.cdecl, exportc.} =
+  let handle = cast[ptr KseqGzHandleObj](fp)
+  if handle.isNil or handle.closed:
+    return -1
+  if len <= 0:
+    return 0
+  try:
+    let n = handle.file.readRaw(buf, int(len))
+    if n < 0:
+      handle.lastError = "error reading " & handle.path
+      return -1
+    result = cint(n)
+  except CatchableError as error:
+    handle.lastError = error.msg
+    result = -1
 
-## Initialize a kseq parser handle from an open gzFile stream.
+## Initialize a kseq parser handle from an open gzfast-backed input stream.
 ##
 ## Args:
-##   fp: Open gzip/plain-text stream handle
+##   fp: Open gzip/plain-text stream handle adapted for kseq
 ##
 ## Returns:
 ##   Pointer to an initialized parser state
@@ -121,24 +128,18 @@ proc kseq_read*(seq: ptr kseq_t): cint {.header: kseqh, importc: "kseq_read".}
 ##   seq: Parser state previously created with `kseq_init`
 proc kseq_destroy*(seq: ptr kseq_t) {.header: kseqh, importc: "kseq_destroy".}
 
-proc openGzForRead(path: string): KseqGzFile =
-  if path == "-":
-    when defined(posix):
-      let stdinDup = posix.dup(0)
-      if stdinDup < 0:
-        raise newException(IOError, "Cannot duplicate stdin for reading")
-      result = gzdopen(int32(stdinDup), "r")
-      if result == nil:
-        discard posix.close(stdinDup)
-        raise newException(IOError, "Cannot open stdin for reading")
-    else:
-      result = gzdopen(0, "r")
-      if result == nil:
-        raise newException(IOError, "Cannot open stdin for reading")
-  else:
-    result = gzopen(path, "r")
-    if result == nil:
-      raise newException(IOError, "Cannot open file: " & path)
+proc openGzForRead(path: string): KseqGzHandle =
+  result = KseqGzHandle(path: path)
+  try:
+    result.file.open(path)
+  except CatchableError as error:
+    raise newException(IOError, "Cannot open file: " & path & ": " & error.msg)
+
+proc closeGzForRead(handle: KseqGzHandle): int {.discardable.} =
+  if handle.isNil or handle.closed:
+    return 0
+  result = handle.file.close()
+  handle.closed = true
 
 proc cstrOrEmpty(p: ptr char): string {.inline.} =
   if p.isNil:
@@ -212,7 +213,8 @@ proc requireFastqRecord(rec: ptr kseq_t, path: string, pairNumber: int, mate: in
       $pairNumber & ", mate " & $mate & " in " & path
     )
 
-proc raiseKseqReadError(path: string, status: cint, recordNumber: int) {.noReturn.} =
+proc raiseKseqReadError(path: string, status: cint, recordNumber: int;
+    handle: KseqGzHandle = nil) {.noReturn.} =
   case status
   of -2:
     raise newException(
@@ -221,6 +223,12 @@ proc raiseKseqReadError(path: string, status: cint, recordNumber: int) {.noRetur
       ": truncated or mismatched quality string"
     )
   of -3:
+    if not handle.isNil and handle.lastError.len > 0:
+      raise newException(
+        IOError,
+        "Error reading " & path & " at record " & $recordNumber &
+        ": " & handle.lastError
+      )
     raise newException(
       IOError,
       "Error reading " & path & " at record " & $recordNumber
@@ -267,10 +275,10 @@ proc requireQualityForFastqHeader(rec: ptr kseq_t, path: string, recordNumber: i
 iterator readFQPtr*(path: string): FQRecordPtr =
   # - ptr char will be reused on next iteration
   # - for stdin use "-" as path
-  # - gz[d]open default even for flat file format
+  # - the gzfast-backed shim accepts both gzip and plain FASTX streams
   var result: FQRecordPtr# 'result' not implicit in iterators
   let fp = openGzForRead(path)
-  let rec = kseq_init(fp)
+  let rec = kseq_init(fp.asKseqFile())
   var recordNumber = 0
   try:
     while true:
@@ -278,7 +286,7 @@ iterator readFQPtr*(path: string): FQRecordPtr =
       if ret == -1:
         break
       if ret < -1:
-        raiseKseqReadError(path, ret, recordNumber + 1)
+        raiseKseqReadError(path, ret, recordNumber + 1, fp)
 
       inc recordNumber
       requireQualityForFastqHeader(rec, path, recordNumber)
@@ -286,7 +294,7 @@ iterator readFQPtr*(path: string): FQRecordPtr =
       yield result
   finally:
     kseq_destroy(rec)
-    discard gzclose(fp)
+    discard closeGzForRead(fp)
 
 ## Iterator for reading FASTQ files, returning copies of record data
 ##
@@ -338,21 +346,22 @@ iterator readFQ*(path: string): FQRecord =
 ##   IOError: If files cannot be opened or have mismatched lengths
 ##   ValueError: If checkNames is true and read names don't match
 iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false): FQPairPtr =
-  var fp1, fp2: KseqGzFile
+  var fp1, fp2: KseqGzHandle
 
   fp1 = openGzForRead(path1)
 
   if path2 == "-":
-    discard gzclose(fp1)
+    discard closeGzForRead(fp1)
     raise newException(IOError, "Cannot use stdin for both paired files")
   else:
-    fp2 = gzopen(path2, "r")
-  if fp2 == nil:
-    discard gzclose(fp1)
-    raise newException(IOError, "Cannot open file: " & path2)
+    try:
+      fp2 = openGzForRead(path2)
+    except CatchableError:
+      discard closeGzForRead(fp1)
+      raise
 
-  let rec1 = kseq_init(fp1)
-  let rec2 = kseq_init(fp2)
+  let rec1 = kseq_init(fp1.asKseqFile())
+  let rec2 = kseq_init(fp2.asKseqFile())
   var pair: FQPairPtr
   var count = 0
 
@@ -362,9 +371,9 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
       let ret2 = kseq_read(rec2)
 
       if ret1 < -1:
-        raiseKseqReadError(path1, ret1, count + 1)
+        raiseKseqReadError(path1, ret1, count + 1, fp1)
       if ret2 < -1:
-        raiseKseqReadError(path2, ret2, count + 1)
+        raiseKseqReadError(path2, ret2, count + 1, fp2)
 
       if ret1 == -1 and ret2 == -1:
         break
@@ -395,8 +404,8 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
   finally:
     kseq_destroy(rec1)
     kseq_destroy(rec2)
-    discard gzclose(fp1)
-    discard gzclose(fp2)
+    discard closeGzForRead(fp1)
+    discard closeGzForRead(fp2)
 
 ## Iterator for reading interleaved paired-end FASTQ files with pointers.
 ##
@@ -419,7 +428,7 @@ iterator readFQPairPtr*(path1: string, path2: string, checkNames: bool = false):
 ##   ValueError: If input is not FASTQ or `checkNames` detects a mismatch
 iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPairPtr =
   let fp = openGzForRead(path)
-  let rec = kseq_init(fp)
+  let rec = kseq_init(fp.asKseqFile())
   var pair: FQPairPtr
   var pairCount = 0
 
@@ -434,7 +443,7 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
       if ret1 == -1:
         break
       if ret1 < -1:
-        raiseKseqReadError(path, ret1, pairCount * 2 + 1)
+        raiseKseqReadError(path, ret1, pairCount * 2 + 1, fp)
 
       let pairNumber = pairCount + 1
       requireFastqRecord(rec, path, pairNumber, 1)
@@ -455,7 +464,7 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
         raise newException(IOError, "Interleaved file " & path &
           " ended prematurely after " & $pairCount & " complete pairs")
       if ret2 < -1:
-        raiseKseqReadError(path, ret2, pairNumber * 2)
+        raiseKseqReadError(path, ret2, pairNumber * 2, fp)
 
       requireFastqRecord(rec, path, pairNumber, 2)
       pair.read2.setRecordPtrFields(rec)
@@ -474,7 +483,7 @@ iterator readFQInterleavedPairPtr*(path: string, checkNames: bool = false): FQPa
 
   finally:
     kseq_destroy(rec)
-    discard gzclose(fp)
+    discard closeGzForRead(fp)
 
 ## Iterator for reading interleaved paired-end FASTQ files
 ##

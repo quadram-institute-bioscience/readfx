@@ -31,6 +31,8 @@ else:
 
 const GzipMagic = "\x1f\x8b"
 
+proc clearStdioError(file: File) {.importc: "clearerr", header: "<stdio.h>".}
+
 const
   # Compile-time knobs for benchmarking the gzfast-backed native reader.
   readfxGzfastThreads* {.intdefine.}: int = 0
@@ -215,11 +217,12 @@ proc openGzip(f: var GzFile; file: File; prefix: string; ownsFile: bool;
   f.gzipSpanPos = 0
   f.gzipFinished = false
 
-proc open(f: var GzFile, fn: string,
+proc open*(f: var GzFile, fn: string,
     mode: FileMode = fmRead, bufferSize: int = 0x10000): int {.discardable.} =
   assert(mode == fmRead)
   result = 0
   if fn == "-" or fn == "":
+    clearStdioError(stdin)
     let prefix = stdin.readPrefix(2)
     if prefix.hasGzipMagic():
       f.openGzip(stdin, prefix, ownsFile = false, path = "stdin", bufferSize)
@@ -236,7 +239,7 @@ proc open(f: var GzFile, fn: string,
         raise newException(IOError, "error opening " & fn)
       f.openPlain(file, "", ownsFile = true, path = fn)
 
-proc close(f: var GzFile): int {.discardable.} =
+proc close*(f: var GzFile): int {.discardable.} =
   result = 0
   case f.kind
   of gfPlain:
@@ -258,6 +261,34 @@ proc close(f: var GzFile): int {.discardable.} =
   f.gzipSpanPos = 0
   f.gzipFinished = false
 
+proc readRaw*(f: var GzFile, buffer: pointer, sz: int):
+    int {.discardable, inline.} =
+  if sz <= 0:
+    return 0
+
+  case f.kind
+  of gfPlain:
+    var written = 0
+    if f.plainPrefixPos < f.plainPrefix.len:
+      let n = min(sz, f.plainPrefix.len - f.plainPrefixPos)
+      copyMem(buffer, addr f.plainPrefix[f.plainPrefixPos], n)
+      f.plainPrefixPos += n
+      written += n
+    if written < sz:
+      let dst = cast[pointer](cast[uint](buffer) + uint(written))
+      let n = f.plainFile.readBuffer(dst, sz - written)
+      if n < 0:
+        return -1
+      written += n
+    result = written
+  of gfGzip:
+    result = f.gzipStream.readData(buffer, sz)
+    if result == 0 and not f.gzipFinished:
+      discard f.gzipStream.finish()
+      f.gzipFinished = true
+  of gfClosed:
+    raise newException(IOError, "input stream is closed")
+
 proc read(f: var GzFile, buf: var string, sz: int, offset: int = 0):
     int {.discardable, inline.} =
   if sz <= 0:
@@ -266,31 +297,11 @@ proc read(f: var GzFile, buf: var string, sz: int, offset: int = 0):
     return 0
   if buf.len < offset + sz:
     buf.setLen(offset + sz)
-
-  case f.kind
-  of gfPlain:
-    var written = 0
-    if f.plainPrefixPos < f.plainPrefix.len:
-      let n = min(sz, f.plainPrefix.len - f.plainPrefixPos)
-      copyMem(addr buf[offset], addr f.plainPrefix[f.plainPrefixPos], n)
-      f.plainPrefixPos += n
-      written += n
-    if written < sz:
-      let n = f.plainFile.readBuffer(addr buf[offset + written], sz - written)
-      if n < 0:
-        buf.setLen(offset + written)
-        return -1
-      written += n
-    result = written
+  result = f.readRaw(addr buf[offset], sz)
+  if result >= 0:
     buf.setLen(offset + result)
-  of gfGzip:
-    result = f.gzipStream.readData(addr buf[offset], sz)
-    buf.setLen(offset + result)
-    if result == 0 and not f.gzipFinished:
-      discard f.gzipStream.finish()
-      f.gzipFinished = true
-  of gfClosed:
-    raise newException(IOError, "input stream is closed")
+  else:
+    buf.setLen(offset)
 
 proc finishGzipAtEnd(f: var GzFile) {.inline.} =
   if not f.gzipFinished:
