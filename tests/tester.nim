@@ -6,12 +6,20 @@ when defined(posix):
   import posix
 
 import ../readfx
+import gzfast
 
 proc cstrOrEmpty(p: ptr char): string =
   if p.isNil:
     ""
   else:
     $cast[cstring](p)
+
+proc writeGzipText(path, text: string) =
+  var w = gzfast.openGzFastWriter(path)
+  try:
+    discard w.writeString(text)
+  finally:
+    w.close()
   
 test "input files":
   # Check if the test files exist
@@ -779,6 +787,69 @@ test "Bufio: readUntil custom delimiter":
   check buf == "def"
   check f.readUntil(buf, dret, int(':')) == 3  # last field, ends at EOF
   check buf == "ghi"
+
+test "GzFile: direct reads support non-FASTX gzip content":
+  let path = getTempDir() / "readfx_arbitrary.txt.gz"
+  let text = "alpha,beta\nplain text\nnot fastx\n"
+  writeGzipText(path, text)
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var f: GzFile
+  f.open(path)
+  defer: f.close()
+
+  var got = ""
+  var chunk = ""
+  while true:
+    let n = f.read(chunk, 5)
+    check n >= 0
+    if n == 0:
+      break
+    got.add(chunk)
+  check got == text
+
+test "readGzChunks reads arbitrary gzip and plain content":
+  let gzPath = getTempDir() / "readfx_chunks.txt.gz"
+  let plainPath = getTempDir() / "readfx_chunks.txt"
+  let text = "one|two|three|four"
+  writeGzipText(gzPath, text)
+  writeFile(plainPath, text)
+  defer:
+    if fileExists(gzPath):
+      removeFile(gzPath)
+    if fileExists(plainPath):
+      removeFile(plainPath)
+
+  var gzJoined = ""
+  for chunk in readGzChunks(gzPath, chunkSize = 4):
+    check chunk.len <= 4
+    gzJoined.add(chunk)
+  check gzJoined == text
+
+  var plainJoined = ""
+  for chunk in readGzChunks(plainPath, chunkSize = 6):
+    check chunk.len <= 6
+    plainJoined.add(chunk)
+  check plainJoined == text
+
+test "readGzLines reads arbitrary gzip lines":
+  let path = getTempDir() / "readfx_lines.txt.gz"
+  writeGzipText(path, "header\tvalue\r\nx\t1\nlast")
+  defer:
+    if fileExists(path):
+      removeFile(path)
+
+  var lines: seq[string]
+  for line in readGzLines(path):
+    lines.add(line)
+  check lines == @["header\tvalue", "x\t1", "last"]
+
+test "readGzChunks rejects invalid chunk size":
+  expect ValueError:
+    for chunk in readGzChunks("./tests/seq.txt", chunkSize = 0):
+      discard chunk
 
 #===
 # readFastx edge cases

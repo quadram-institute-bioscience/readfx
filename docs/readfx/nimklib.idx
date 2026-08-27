@@ -1,0 +1,30 @@
+nimTitle	nimklib	readfx/nimklib.html	module readfx/nimklib		0
+nim	klibVer	readfx/nimklib.html#klibVer	const klibVer		19
+nim	readfxGzfastThreads	readfx/nimklib.html#readfxGzfastThreads	const readfxGzfastThreads		38
+nim	readfxGzfastDecodedChunkSize	readfx/nimklib.html#readfxGzfastDecodedChunkSize	const readfxGzfastDecodedChunkSize		39
+nim	readfxGzfastInputPageSize	readfx/nimklib.html#readfxGzfastInputPageSize	const readfxGzfastInputPageSize		40
+nim	GzFile	readfx/nimklib.html#GzFile	object GzFile		55
+nim	open	readfx/nimklib.html#open,GzFile,string,FileMode,int	proc open(f: var GzFile; fn: string; mode: FileMode = fmRead;\n     bufferSize: int = 0x00010000): int		226
+nim	close	readfx/nimklib.html#close,GzFile	proc close(f: var GzFile): int		248
+nim	readRaw	readfx/nimklib.html#readRaw,GzFile,pointer,int	proc readRaw(f: var GzFile; buffer: pointer; sz: int): int		283
+nim	read	readfx/nimklib.html#read,GzFile,string,int,int	proc read(f: var GzFile; buf: var string; sz: int; offset: int = 0): int		335
+nim	readGzChunks	readfx/nimklib.html#readGzChunks.i,string,int,int	iterator readGzChunks(fn: string; chunkSize: int = 0x00010000;\n             bufferSize: int = 0x00010000): string		368
+nim	Bufio	readfx/nimklib.html#Bufio	tuple Bufio		445
+nim	open	readfx/nimklib.html#open,Bufio[T],string,FileMode,int	proc open[T](f: var Bufio[T]; fn: string; mode: FileMode = fmRead;\n        sz: int = 0x00010000): int		457
+nim	xopen	readfx/nimklib.html#xopen,string,FileMode,int	proc xopen[T](fn: string; mode: FileMode = fmRead; sz: int = 0x00010000): Bufio[T]		476
+nim	close	readfx/nimklib.html#close,Bufio[T]	proc close[T](f: var Bufio[T]): int		489
+nim	eof	readfx/nimklib.html#eof,Bufio[T]	proc eof[T](f: Bufio[T]): bool		506
+nim	readByte	readfx/nimklib.html#readByte,Bufio[T]	proc readByte[T](f: var Bufio[T]): int		518
+nim	read	readfx/nimklib.html#read,Bufio[T],string,int,int	proc read[T](f: var Bufio[T]; buf: var string; sz: int; offset: int = 0): int		549
+nim	readUntil	readfx/nimklib.html#readUntil,Bufio[T],string,char,int,int	proc readUntil[T](f: var Bufio[T]; buf: var string; dret: var char; delim: int = -1;\n             offset: int = 0): int		668
+nim	readLine	readfx/nimklib.html#readLine,Bufio[T],string	proc readLine[T](f: var Bufio[T]; buf: var string): bool		723
+nim	readGzLines	readfx/nimklib.html#readGzLines.i,string,int	iterator readGzLines(fn: string; bufferSize: int = 0x00010000): string		750
+nim	readFastx	readfx/nimklib.html#readFastx,Bufio[T],FQRecord	proc readFastx[T](f: var Bufio[T]; r: var FQRecord): bool		778
+nim	Interval	readfx/nimklib.html#Interval	tuple Interval		829
+nim	sort	readfx/nimklib.html#sort,seq[Interval[S,T]]	proc sort[S, T](a: var seq[Interval[S, T]])		835
+nim	index	readfx/nimklib.html#index,seq[Interval[S,T]]	proc index[S, T](a: var seq[Interval[S, T]]): int		848
+nim	overlap	readfx/nimklib.html#overlap.i,seq[Interval[S,T]],S,S	iterator overlap[S, T](a: seq[Interval[S, T]]; st: S; en: S): Interval[S, T]		887
+nimgrp	close	readfx/nimklib.html#close-procs-all	proc		248
+nimgrp	read	readfx/nimklib.html#read-procs-all	proc		335
+nimgrp	open	readfx/nimklib.html#open-procs-all	proc		226
+heading	Native Nim FASTA/FASTQ parser and buffered I/O	readfx/nimklib.html#native-nim-fastaslashfastq-parser-and-buffered-islasho	 Native Nim FASTA/FASTQ parser and buffered I/O		0
