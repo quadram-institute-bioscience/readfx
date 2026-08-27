@@ -53,6 +53,12 @@ type
     ownsFile: bool
 
   GzFile* = object
+    ## Transparent plain/gzip input handle backed by gzfast for gzip streams.
+    ##
+    ## `GzFile` is not FASTX-specific: it can read any plain or gzip-compressed
+    ## byte stream. Use `readGzLines` or `readGzChunks` for simple non-FASTX
+    ## text/chunk loops, `xopen[GzFile]` for buffered delimiter parsing, and
+    ## `readFastx` only when parsing FASTA/FASTQ records.
     kind: GzFileKind
     path: string
     plainFile: File
@@ -261,6 +267,19 @@ proc close*(f: var GzFile): int {.discardable.} =
   f.gzipSpanPos = 0
   f.gzipFinished = false
 
+## Read decoded bytes from a transparent plain/gzip input handle.
+##
+## Args:
+##   f: Open `GzFile` handle
+##   buffer: Destination memory
+##   sz: Maximum number of decoded bytes to read
+##
+## Returns:
+##   Number of bytes read, `0` at EOF, or `-1` for a plain-file read error.
+##
+## Notes:
+##   Gzip streams are validated when EOF is reached, so truncated or corrupt
+##   gzip input raises through gzfast instead of silently ending.
 proc readRaw*(f: var GzFile, buffer: pointer, sz: int):
     int {.discardable, inline.} =
   if sz <= 0:
@@ -289,7 +308,31 @@ proc readRaw*(f: var GzFile, buffer: pointer, sz: int):
   of gfClosed:
     raise newException(IOError, "input stream is closed")
 
-proc read(f: var GzFile, buf: var string, sz: int, offset: int = 0):
+## Read decoded bytes from a transparent plain/gzip input handle into a string.
+##
+## Existing content before `offset` is preserved and the destination string is
+## resized to the bytes actually read.
+##
+## Args:
+##   f: Open `GzFile` handle
+##   buf: Destination string
+##   sz: Maximum number of decoded bytes to read
+##   offset: Write position in `buf`
+##
+## Returns:
+##   Number of bytes appended, `0` at EOF, or `-1` for a plain-file read error.
+##
+## Example:
+##   ```nim
+##   var f: GzFile
+##   f.open("payload.json.gz")
+##   defer: f.close()
+##
+##   var chunk = ""
+##   while f.read(chunk, 65536) > 0:
+##     discard chunk
+##   ```
+proc read*(f: var GzFile, buf: var string, sz: int, offset: int = 0):
     int {.discardable, inline.} =
   if sz <= 0:
     if buf.len < offset:
@@ -302,6 +345,43 @@ proc read(f: var GzFile, buf: var string, sz: int, offset: int = 0):
     buf.setLen(offset + result)
   else:
     buf.setLen(offset)
+
+## Iterate decoded chunks from a plain or gzip file.
+##
+## Args:
+##   fn: Input filename (`"-"` means stdin)
+##   chunkSize: Maximum decoded bytes yielded per chunk
+##   bufferSize: Internal reader buffer size
+##
+## Yields:
+##   Decoded chunks as strings. The final chunk may be shorter than `chunkSize`.
+##
+## Raises:
+##   `ValueError` if `chunkSize <= 0`; `IOError` on read/open errors. Corrupt
+##   gzip streams raise gzfast errors while reading to EOF.
+##
+## Example:
+##   ```nim
+##   for chunk in readGzChunks("payload.json.gz", chunkSize = 1 shl 20):
+##     discard chunk
+##   ```
+iterator readGzChunks*(fn: string; chunkSize: int = 0x10000;
+    bufferSize: int = 0x10000): string =
+  if chunkSize <= 0:
+    raise newException(ValueError, "chunkSize must be positive")
+  var f: GzFile
+  f.open(fn, fmRead, bufferSize)
+  try:
+    var chunk = ""
+    while true:
+      let n = f.read(chunk, chunkSize)
+      if n < 0:
+        raise newException(IOError, "error reading " & fn)
+      if n == 0:
+        break
+      yield chunk
+  finally:
+    discard f.close()
 
 proc finishGzipAtEnd(f: var GzFile) {.inline.} =
   if not f.gzipFinished:
@@ -644,6 +724,37 @@ proc readLine*[T](f: var Bufio[T], buf: var string): bool {.discardable, inline.
   var dret: char
   var ret = readUntil(f, buf, dret)
   return if ret >= 0: true else: false
+
+## Iterate decoded lines from a plain or gzip file.
+##
+## Lines are returned without the trailing LF; CRLF input is normalized by
+## dropping the trailing CR. Use `xopen[GzFile]` directly when delimiter status
+## or byte-level control is needed.
+##
+## Args:
+##   fn: Input filename (`"-"` means stdin)
+##   bufferSize: Internal reader buffer size
+##
+## Yields:
+##   Decoded lines from plain or gzip input.
+##
+## Raises:
+##   `IOError` on open/read errors. Corrupt gzip streams raise gzfast errors
+##   while reading to EOF.
+##
+## Example:
+##   ```nim
+##   for line in readGzLines("table.tsv.gz"):
+##     echo line
+##   ```
+iterator readGzLines*(fn: string; bufferSize: int = 0x10000): string =
+  var f = xopen[GzFile](fn, fmRead, bufferSize)
+  try:
+    var line = ""
+    while f.readLine(line):
+      yield line
+  finally:
+    discard f.close()
 
 ################
 # Fastx Reader #
