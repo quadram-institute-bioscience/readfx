@@ -16,6 +16,7 @@ task test, "run the tests":
   exec "nim c -r tests/test_paired"
   exec "nim c -r tests/utils"
   exec "nim c -r tests/test_roundtrip"
+  exec "nim c -r tests/test_no_system_libz"
 
 # DOCUMENTATION
 # ============================================================================
