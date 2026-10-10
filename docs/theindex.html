@@ -16,13 +16,16 @@
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4QQQEwksSS9ZWwAAAk1JREFUWMPtll2ITVEUx39nn/O7Y5qR8f05wtCUUr6ZIS++8pEnkZInPImneaCQ5METNdOkeFBKUhMPRIkHKfEuUZSUlGlKPN2TrgfncpvmnntnmlEyq1Z7t89/rf9a6+y99oZxGZf/XeIq61EdtgKXgdXA0xrYAvBjOIF1AI9zvjcC74BSpndrJPkBWDScTF8Aa4E3wDlgHbASaANmVqlcCnwHvgDvgVfAJ+AikAAvgfVZwLnSVZHZaOuKoQi3ZOMi4NkYkpe1p4J7A8BpYAD49hfIy/oqG0+hLomiKP2L5L+1ubn5115S+3OAn4EnwBlgMzCjyt6ZAnQCJ4A7wOs88iRJHvw50HoujuPBoCKwHWiosy8MdfZnAdcHk8dxXFJ3VQbQlCTJvRBCGdRbD4M6uc5glpY3eAihpN5S5w12diSEcCCEcKUO4ljdr15T76ur1FDDLIQQ3qv71EdDOe3Kxj3leRXyk+pxdWnFWod6Wt2bY3de3aSuUHcPBVimHs7mK9WrmeOF6lR1o9qnzskh2ar2qm1qizpfXaPeVGdlmGN5pb09qMxz1Xb1kLqgzn1RyH7JUXW52lr5e/Kqi9qpto7V1atuUzfnARrV7jEib1T76gG2qxdGmXyiekkt1GswPTtek0aBfJp6YySGBfWg2tPQ0FAYgf1stUfdmdcjarbYJEniKIq6gY/Aw+zWHAC+p2labGpqiorFYgGYCEzN7oQdQClN07O1/EfDyGgC0ALMBdYAi4FyK+4H3gLPsxfR1zRNi+NP7nH5J+QntnXe5B5mpfQAAAAASUVORK5CYII=">
 
 <!-- CSS -->
-<link rel="stylesheet" type="text/css" href="nimdoc.out.css?v=2.2.4">
+<link rel="stylesheet" type="text/css" href="nimdoc.out.css?v=2.2.12">
 
 <!-- JS -->
-<script type="text/javascript" src="dochack.js?v=2.2.4"></script>
+<script type="text/javascript" src="dochack.js?v=2.2.12"></script>
 </head>
 <body>
   <div class="document" id="documentId">
+    <input type="checkbox" id="nav-toggle" hidden>
+    <label for="nav-toggle" id="nav-burger">&#9776;</label>
+    <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">Index</h1>
       Modules: <a href="readfx.html">readfx</a>, <a href="readfx/nimklib.html">readfx/nimklib</a>, <a href="readfx/oligoutils.html">readfx/oligoutils</a>, <a href="readfx/seqtypes.html">readfx/seqtypes</a>, <a href="readfx/sequtils.html">readfx/sequtils</a>, <a href="readfx/writer.html">readfx/writer</a>.<br/><p /><h2>API symbols</h2>
@@ -49,6 +52,8 @@
           data-doc-search-tag="nimklib: proc close(f: var GzFile): int" href="readfx/nimklib.html#close%2CGzFile">nimklib: proc close(f: var GzFile): int</a></li>
           <li><a class="reference external"
           data-doc-search-tag="writer: proc close(w: var FastxWriter)" href="readfx/writer.html#close%2CFastxWriter">writer: proc close(w: var FastxWriter)</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="writer: proc close(w: var PairedFastxWriter)" href="readfx/writer.html#close%2CPairedFastxWriter">writer: proc close(w: var PairedFastxWriter)</a></li>
           </ul></dd>
 <dt><a name="composition" href="#composition"><span>composition:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -125,6 +130,8 @@
 <dt><a name="flush" href="#flush"><span>flush:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="writer: proc flush(w: var FastxWriter)" href="readfx/writer.html#flush%2CFastxWriter">writer: proc flush(w: var FastxWriter)</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="writer: proc flush(w: var PairedFastxWriter)" href="readfx/writer.html#flush%2CPairedFastxWriter">writer: proc flush(w: var PairedFastxWriter)</a></li>
           </ul></dd>
 <dt><a name="Forward" href="#Forward"><span>Forward:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -162,6 +169,14 @@
 <li><a class="reference external"
           data-doc-search-tag="writer: FastxFormat.fxfFastq" href="readfx/writer.html#fxfFastq">writer: FastxFormat.fxfFastq</a></li>
           </ul></dd>
+<dt><a name="fxpInterleaved" href="#fxpInterleaved"><span>fxpInterleaved:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: PairedFastxLayout.fxpInterleaved" href="readfx/writer.html#fxpInterleaved">writer: PairedFastxLayout.fxpInterleaved</a></li>
+          </ul></dd>
+<dt><a name="fxpSplit" href="#fxpSplit"><span>fxpSplit:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: PairedFastxLayout.fxpSplit" href="readfx/writer.html#fxpSplit">writer: PairedFastxLayout.fxpSplit</a></li>
+          </ul></dd>
 <dt><a name="gcContent" href="#gcContent"><span>gcContent:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="sequtils: proc gcContent(record: FQRecord): float" href="readfx/sequtils.html#gcContent%2CFQRecord">sequtils: proc gcContent(record: FQRecord): float</a></li>
@@ -176,9 +191,31 @@
 <li><a class="reference external"
           data-doc-search-tag="nimklib: proc index[S, T](a: var seq[Interval[S, T]]): int" href="readfx/nimklib.html#index%2Cseq%5BInterval%5BS%2CT%5D%5D">nimklib: proc index[S, T](a: var seq[Interval[S, T]]): int</a></li>
           </ul></dd>
+<dt><a name="interleavedFastxWriter" href="#interleavedFastxWriter"><span>interleavedFastxWriter:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc interleavedFastxWriter(destination: FastxDestination = stdoutDestination();
+                       format: FastxFormat = fxfFastq;
+                       compression: bool = false;
+                       bufferSize: int = DefaultBufferSize;
+                       compressionLevel: int = DefaultCompressionLevel;
+                       compressionThreads: int = 1;
+                       fastaWidth: int = DefaultFastaWidth;
+                       checkNames: bool = false): PairedFastxWriter" href="readfx/writer.html#interleavedFastxWriter%2CFastxDestination%2CFastxFormat%2Cbool%2Cint%2Cint%2Cint%2Cint%2Cbool">writer: proc interleavedFastxWriter(destination: FastxDestination = stdoutDestination();
+                       format: FastxFormat = fxfFastq;
+                       compression: bool = false;
+                       bufferSize: int = DefaultBufferSize;
+                       compressionLevel: int = DefaultCompressionLevel;
+                       compressionThreads: int = 1;
+                       fastaWidth: int = DefaultFastaWidth;
+                       checkNames: bool = false): PairedFastxWriter</a></li>
+          </ul></dd>
 <dt><a name="Interval" href="#Interval"><span>Interval:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="nimklib: tuple Interval" href="readfx/nimklib.html#Interval">nimklib: tuple Interval</a></li>
+          </ul></dd>
+<dt><a name="isOpen" href="#isOpen"><span>isOpen:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc isOpen(w: PairedFastxWriter): bool" href="readfx/writer.html#isOpen%2CPairedFastxWriter">writer: proc isOpen(w: PairedFastxWriter): bool</a></li>
           </ul></dd>
 <dt><a name="klibVer" href="#klibVer"><span>klibVer:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -223,6 +260,28 @@
 <dt><a name="overlap" href="#overlap"><span>overlap:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="nimklib: iterator overlap[S, T](a: seq[Interval[S, T]]; st: S; en: S): Interval[S, T]" href="readfx/nimklib.html#overlap.i%2Cseq%5BInterval%5BS%2CT%5D%5D%2CS%2CS">nimklib: iterator overlap[S, T](a: seq[Interval[S, T]]; st: S; en: S): Interval[S, T]</a></li>
+          </ul></dd>
+<dt><a name="PairedFastxLayout" href="#PairedFastxLayout"><span>PairedFastxLayout:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: enum PairedFastxLayout" href="readfx/writer.html#PairedFastxLayout">writer: enum PairedFastxLayout</a></li>
+          </ul></dd>
+<dt><a name="PairedFastxWriter" href="#PairedFastxWriter"><span>PairedFastxWriter:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: object PairedFastxWriter" href="readfx/writer.html#PairedFastxWriter">writer: object PairedFastxWriter</a></li>
+          </ul></dd>
+<dt><a name="pairedFastxWriter" href="#pairedFastxWriter"><span>pairedFastxWriter:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc pairedFastxWriter(destination1, destination2: FastxDestination;
+                  format: FastxFormat = fxfFastq; compression: bool = false;
+                  bufferSize: int = DefaultBufferSize;
+                  compressionLevel: int = DefaultCompressionLevel;
+                  compressionThreads: int = 1;
+                  fastaWidth: int = DefaultFastaWidth; checkNames: bool = false): PairedFastxWriter" href="readfx/writer.html#pairedFastxWriter%2CFastxDestination%2CFastxDestination%2CFastxFormat%2Cbool%2Cint%2Cint%2Cint%2Cint%2Cbool">writer: proc pairedFastxWriter(destination1, destination2: FastxDestination;
+                  format: FastxFormat = fxfFastq; compression: bool = false;
+                  bufferSize: int = DefaultBufferSize;
+                  compressionLevel: int = DefaultCompressionLevel;
+                  compressionThreads: int = 1;
+                  fastaWidth: int = DefaultFastaWidth; checkNames: bool = false): PairedFastxWriter</a></li>
           </ul></dd>
 <dt><a name="qualCharToInt" href="#qualCharToInt"><span>qualCharToInt:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -362,6 +421,12 @@
 <li><a class="reference external"
           data-doc-search-tag="seqtypes: Strand.Unknown" href="readfx/seqtypes.html#Unknown">seqtypes: Strand.Unknown</a></li>
           </ul></dd>
+<dt><a name="writePair" href="#writePair"><span>writePair:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="writer: proc writePair(w: var PairedFastxWriter; pair: FQPair)" href="readfx/writer.html#writePair%2CPairedFastxWriter%2CFQPair">writer: proc writePair(w: var PairedFastxWriter; pair: FQPair)</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="writer: proc writePair(w: var PairedFastxWriter; pair: FQPairPtr)" href="readfx/writer.html#writePair%2CPairedFastxWriter%2CFQPairPtr">writer: proc writePair(w: var PairedFastxWriter; pair: FQPairPtr)</a></li>
+          </ul></dd>
 <dt><a name="writeRecord" href="#writeRecord"><span>writeRecord:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="writer: proc writeRecord(w: var FastxWriter; record: FQRecord)" href="readfx/writer.html#writeRecord%2CFastxWriter%2CFQRecord">writer: proc writeRecord(w: var FastxWriter; record: FQRecord)</a></li>
@@ -380,7 +445,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-08-27 12:58:12 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-10 20:07:52 UTC</small>
       </div>
     </div>
   </div>

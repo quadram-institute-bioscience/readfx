@@ -16,13 +16,16 @@
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4QQQEwksSS9ZWwAAAk1JREFUWMPtll2ITVEUx39nn/O7Y5qR8f05wtCUUr6ZIS++8pEnkZInPImneaCQ5METNdOkeFBKUhMPRIkHKfEuUZSUlGlKPN2TrgfncpvmnntnmlEyq1Z7t89/rf9a6+y99oZxGZf/XeIq61EdtgKXgdXA0xrYAvBjOIF1AI9zvjcC74BSpndrJPkBWDScTF8Aa4E3wDlgHbASaANmVqlcCnwHvgDvgVfAJ+AikAAvgfVZwLnSVZHZaOuKoQi3ZOMi4NkYkpe1p4J7A8BpYAD49hfIy/oqG0+hLomiKP2L5L+1ubn5115S+3OAn4EnwBlgMzCjyt6ZAnQCJ4A7wOs88iRJHvw50HoujuPBoCKwHWiosy8MdfZnAdcHk8dxXFJ3VQbQlCTJvRBCGdRbD4M6uc5glpY3eAihpN5S5w12diSEcCCEcKUO4ljdr15T76ur1FDDLIQQ3qv71EdDOe3Kxj3leRXyk+pxdWnFWod6Wt2bY3de3aSuUHcPBVimHs7mK9WrmeOF6lR1o9qnzskh2ar2qm1qizpfXaPeVGdlmGN5pb09qMxz1Xb1kLqgzn1RyH7JUXW52lr5e/Kqi9qpto7V1atuUzfnARrV7jEib1T76gG2qxdGmXyiekkt1GswPTtek0aBfJp6YySGBfWg2tPQ0FAYgf1stUfdmdcjarbYJEniKIq6gY/Aw+zWHAC+p2labGpqiorFYgGYCEzN7oQdQClN07O1/EfDyGgC0ALMBdYAi4FyK+4H3gLPsxfR1zRNi+NP7nH5J+QntnXe5B5mpfQAAAAASUVORK5CYII=">
 
 <!-- CSS -->
-<link rel="stylesheet" type="text/css" href="../nimdoc.out.css?v=2.2.4">
+<link rel="stylesheet" type="text/css" href="../nimdoc.out.css?v=2.2.12">
 
 <!-- JS -->
-<script type="text/javascript" src="../dochack.js?v=2.2.4"></script>
+<script type="text/javascript" src="../dochack.js?v=2.2.12"></script>
 </head>
 <body>
   <div class="document" id="documentId">
+    <input type="checkbox" id="nav-toggle" hidden>
+    <label for="nav-toggle" id="nav-burger">&#9776;</label>
+    <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">readfx/writer</h1>
       <div class="row">
@@ -80,6 +83,10 @@
   compressionThreads*: int
   fastaWidth*: int
   isOpen*: bool">FastxWriter</a></li>
+<li><a class="reference" href="#PairedFastxLayout" title="PairedFastxLayout = enum
+  fxpSplit,                 ## R1 and R2 go to separate destinations
+  fxpInterleaved             ## R1 followed by R2 in one destination">PairedFastxLayout</a></li>
+<li><a class="reference" href="#PairedFastxWriter" title="PairedFastxWriter = object">PairedFastxWriter</a></li>
 
     </ul>
   </details>
@@ -101,6 +108,7 @@
     <ul class="simple simple-toc-section">
       <ul class="simple nested-toc-section">close
   <li><a class="reference" href="#close%2CFastxWriter" title="close(w: var FastxWriter)">close(w: var FastxWriter)</a></li>
+<li><a class="reference" href="#close%2CPairedFastxWriter" title="close(w: var PairedFastxWriter)">close(w: var PairedFastxWriter)</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">fastxWriter
@@ -121,10 +129,52 @@
 </ul>
 <ul class="simple nested-toc-section">flush
   <li><a class="reference" href="#flush%2CFastxWriter" title="flush(w: var FastxWriter)">flush(w: var FastxWriter)</a></li>
+<li><a class="reference" href="#flush%2CPairedFastxWriter" title="flush(w: var PairedFastxWriter)">flush(w: var PairedFastxWriter)</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">interleavedFastxWriter
+  <li><a class="reference" href="#interleavedFastxWriter%2CFastxDestination%2CFastxFormat%2Cbool%2Cint%2Cint%2Cint%2Cint%2Cbool" title="interleavedFastxWriter(destination: FastxDestination = stdoutDestination();
+                       format: FastxFormat = fxfFastq;
+                       compression: bool = false;
+                       bufferSize: int = DefaultBufferSize;
+                       compressionLevel: int = DefaultCompressionLevel;
+                       compressionThreads: int = 1;
+                       fastaWidth: int = DefaultFastaWidth;
+                       checkNames: bool = false): PairedFastxWriter">interleavedFastxWriter(destination: FastxDestination = stdoutDestination();
+                       format: FastxFormat = fxfFastq;
+                       compression: bool = false;
+                       bufferSize: int = DefaultBufferSize;
+                       compressionLevel: int = DefaultCompressionLevel;
+                       compressionThreads: int = 1;
+                       fastaWidth: int = DefaultFastaWidth;
+                       checkNames: bool = false): PairedFastxWriter</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">isOpen
+  <li><a class="reference" href="#isOpen%2CPairedFastxWriter" title="isOpen(w: PairedFastxWriter): bool">isOpen(w: PairedFastxWriter): bool</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">pairedFastxWriter
+  <li><a class="reference" href="#pairedFastxWriter%2CFastxDestination%2CFastxDestination%2CFastxFormat%2Cbool%2Cint%2Cint%2Cint%2Cint%2Cbool" title="pairedFastxWriter(destination1, destination2: FastxDestination;
+                  format: FastxFormat = fxfFastq; compression: bool = false;
+                  bufferSize: int = DefaultBufferSize;
+                  compressionLevel: int = DefaultCompressionLevel;
+                  compressionThreads: int = 1;
+                  fastaWidth: int = DefaultFastaWidth; checkNames: bool = false): PairedFastxWriter">pairedFastxWriter(destination1, destination2: FastxDestination;
+                  format: FastxFormat = fxfFastq; compression: bool = false;
+                  bufferSize: int = DefaultBufferSize;
+                  compressionLevel: int = DefaultCompressionLevel;
+                  compressionThreads: int = 1;
+                  fastaWidth: int = DefaultFastaWidth; checkNames: bool = false): PairedFastxWriter</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">stdoutDestination
   <li><a class="reference" href="#stdoutDestination" title="stdoutDestination(): FastxDestination">stdoutDestination(): FastxDestination</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">writePair
+  <li><a class="reference" href="#writePair%2CPairedFastxWriter%2CFQPair" title="writePair(w: var PairedFastxWriter; pair: FQPair)">writePair(w: var PairedFastxWriter; pair: FQPair)</a></li>
+<li><a class="reference" href="#writePair%2CPairedFastxWriter%2CFQPairPtr" title="writePair(w: var PairedFastxWriter; pair: FQPairPtr)">writePair(w: var PairedFastxWriter; pair: FQPairPtr)</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">writeRecord
@@ -181,8 +231,8 @@
   <h1><a class="toc-backref" href="#7">Types</a></h1>
   <dl class="item">
     <div id="FastxDestination">
-  <dt><pre><a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Keyword">case</span> <span class="Identifier">kind</span><span class="Operator">*</span><span class="Other">:</span> <a href="writer.html#FastxDestinationKind"><span class="Identifier">FastxDestinationKind</span></a>
+  <dt><pre><a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Keyword">case</span> <span class="Identifier">kind</span><span class="Operator">*</span><span class="Other">:</span> <a href="#FastxDestinationKind"><span class="Identifier">FastxDestinationKind</span></a>
   <span class="Keyword">of</span> <span class="Identifier">fxdStdout</span><span class="Other">:</span>
     <span class="Keyword">nil</span>
   <span class="Keyword">of</span> <span class="Identifier">fxdFile</span><span class="Other">:</span>
@@ -196,7 +246,7 @@
   </dd>
 </div>
 <div id="FastxDestinationKind">
-  <dt><pre><a href="writer.html#FastxDestinationKind"><span class="Identifier">FastxDestinationKind</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="#FastxDestinationKind"><span class="Identifier">FastxDestinationKind</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">fxdStdout</span><span class="Other">,</span>                <span class="Comment">## Write to stdout</span>
   <span class="Identifier">fxdFile</span>                    <span class="Comment">## Write to file path</span></pre></dt>
   <dd>
@@ -208,7 +258,7 @@
   </dd>
 </div>
 <div id="FastxFormat">
-  <dt><pre><a href="writer.html#FastxFormat"><span class="Identifier">FastxFormat</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="#FastxFormat"><span class="Identifier">FastxFormat</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">fxfFasta</span><span class="Other">,</span>                 <span class="Comment">## Emit FASTA records</span>
   <span class="Identifier">fxfFastq</span>                   <span class="Comment">## Emit FASTQ records</span></pre></dt>
   <dd>
@@ -220,10 +270,10 @@
   </dd>
 </div>
 <div id="FastxWriter">
-  <dt><pre><a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Identifier">format</span><span class="Operator">*</span><span class="Other">:</span> <a href="writer.html#FastxFormat"><span class="Identifier">FastxFormat</span></a>
+  <dt><pre><a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Identifier">format</span><span class="Operator">*</span><span class="Other">:</span> <a href="#FastxFormat"><span class="Identifier">FastxFormat</span></a>
   <span class="Identifier">compression</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">bool</span>
-  <span class="Identifier">destination</span><span class="Operator">*</span><span class="Other">:</span> <a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a>
+  <span class="Identifier">destination</span><span class="Operator">*</span><span class="Other">:</span> <a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a>
   <span class="Identifier">bufferSize</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">compressionLevel</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">compressionThreads</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
@@ -237,6 +287,28 @@
 
   </dd>
 </div>
+<div id="PairedFastxLayout">
+  <dt><pre><a href="#PairedFastxLayout"><span class="Identifier">PairedFastxLayout</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
+  <span class="Identifier">fxpSplit</span><span class="Other">,</span>                 <span class="Comment">## R1 and R2 go to separate destinations</span>
+  <span class="Identifier">fxpInterleaved</span>             <span class="Comment">## R1 followed by R2 in one destination</span></pre></dt>
+  <dd>
+    
+    
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L85" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L85" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+<div id="PairedFastxWriter">
+  <dt><pre><a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a> <span class="Other">=</span> <span class="Keyword">object</span></pre></dt>
+  <dd>
+    
+    Owns one or two FastxWriters. Do not copy an open writer. Pair writes are not atomic across destinations: an I/O error may leave unequal output counts. After such an error, only close is permitted.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L89" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L89" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
 
   </dl>
 </div>
@@ -244,7 +316,7 @@
   <h1><a class="toc-backref" href="#10">Consts</a></h1>
   <dl class="item">
     <div id="DefaultBufferSize">
-  <dt><pre><a href="writer.html#DefaultBufferSize"><span class="Identifier">DefaultBufferSize</span></a> <span class="Other">=</span> <span class="DecNumber">4194304</span></pre></dt>
+  <dt><pre><a href="#DefaultBufferSize"><span class="Identifier">DefaultBufferSize</span></a> <span class="Other">=</span> <span class="DecNumber">4194304</span></pre></dt>
   <dd>
     
     
@@ -254,7 +326,7 @@
   </dd>
 </div>
 <div id="DefaultCompressionLevel">
-  <dt><pre><a href="writer.html#DefaultCompressionLevel"><span class="Identifier">DefaultCompressionLevel</span></a> <span class="Other">=</span> <span class="DecNumber">6</span></pre></dt>
+  <dt><pre><a href="#DefaultCompressionLevel"><span class="Identifier">DefaultCompressionLevel</span></a> <span class="Other">=</span> <span class="DecNumber">6</span></pre></dt>
   <dd>
     
     
@@ -264,7 +336,7 @@
   </dd>
 </div>
 <div id="DefaultFastaWidth">
-  <dt><pre><a href="writer.html#DefaultFastaWidth"><span class="Identifier">DefaultFastaWidth</span></a> <span class="Other">=</span> <span class="DecNumber">60</span></pre></dt>
+  <dt><pre><a href="#DefaultFastaWidth"><span class="Identifier">DefaultFastaWidth</span></a> <span class="Other">=</span> <span class="DecNumber">60</span></pre></dt>
   <dd>
     
     
@@ -281,15 +353,27 @@
   <dl class="item">
     <div id="close-procs-all">
   <div id="close,FastxWriter">
-  <dt><pre><span class="Keyword">proc</span> <a href="#close%2CFastxWriter"><span class="Identifier">close</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span>
-    <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#close%2CFastxWriter"><span class="Identifier">close</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span>
+                                 <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Flush and close the writer stream.</p>
-<p>It is safe to call <tt class="docutils literal"><span class="pre"><span class="Identifier">close</span></span></tt> multiple times.</p>
+<p>It is safe to call <tt class="docutils literal"><span class="pre"><span class="Identifier">close</span></span></tt> multiple times, including after an I/O error. Cleanup is attempted even if flushing fails; the first error is reported.</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L321" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L321" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L335" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L335" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+<div id="close,PairedFastxWriter">
+  <dt><pre><span class="Keyword">proc</span> <a href="#close%2CPairedFastxWriter"><span class="Identifier">close</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span>
+                                       <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span>
+                                       <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Close both streams even if one close fails; report the first error. Safe to call repeatedly. Close is allowed after a write/flush failure.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L616" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L616" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -297,13 +381,13 @@
 </div>
 <div id="fastxWriter-procs-all">
   <div id="fastxWriter,FastxFormat,bool,FastxDestination,int,int,int,int">
-  <dt><pre><span class="Keyword">proc</span> <a href="#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint%2Cint"><span class="Identifier">fastxWriter</span></a><span class="Other">(</span><span class="Identifier">format</span><span class="Other">:</span> <a href="writer.html#FastxFormat"><span class="Identifier">FastxFormat</span></a><span class="Other">;</span> <span class="Identifier">compression</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
-                 <span class="Identifier">destination</span><span class="Other">:</span> <a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a> <span class="Other">=</span> <span class="Identifier">stdoutDestination</span><span class="Other">(</span><span class="Other">)</span><span class="Other">;</span>
+  <dt><pre><span class="Keyword">proc</span> <a href="#fastxWriter%2CFastxFormat%2Cbool%2CFastxDestination%2Cint%2Cint%2Cint%2Cint"><span class="Identifier">fastxWriter</span></a><span class="Other">(</span><span class="Identifier">format</span><span class="Other">:</span> <a href="#FastxFormat"><span class="Identifier">FastxFormat</span></a><span class="Other">;</span> <span class="Identifier">compression</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
+                 <span class="Identifier">destination</span><span class="Other">:</span> <a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a> <span class="Other">=</span> <span class="Identifier">stdoutDestination</span><span class="Other">(</span><span class="Other">)</span><span class="Other">;</span>
                  <span class="Identifier">bufferSize</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultBufferSize</span><span class="Other">;</span>
                  <span class="Identifier">compressionLevel</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultCompressionLevel</span><span class="Other">;</span>
                  <span class="Identifier">compressionThreads</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span>
-                 <span class="Identifier">fastaWidth</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultFastaWidth</span><span class="Other">)</span><span class="Other">:</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span>
-    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastConfigError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+                 <span class="Identifier">fastaWidth</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultFastaWidth</span><span class="Other">)</span><span class="Other">:</span> <a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastConfigError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
     <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ExecIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span>
     <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
@@ -313,8 +397,8 @@
 <p>Returns: Initialized <tt class="docutils literal"><span class="pre"><span class="Identifier">FastxWriter</span></span></tt></p>
 <p>Raises: IOError: If destination stream cannot be opened ValueError: If configuration values are invalid</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L389" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L389" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L416" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L416" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -322,7 +406,7 @@
 </div>
 <div id="fileDestination-procs-all">
   <div id="fileDestination,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#fileDestination%2Cstring"><span class="Identifier">fileDestination</span></a><span class="Other">(</span><span class="Identifier">path</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+  <dt><pre><span class="Keyword">proc</span> <a href="#fileDestination%2Cstring"><span class="Identifier">fileDestination</span></a><span class="Other">(</span><span class="Identifier">path</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
@@ -330,8 +414,8 @@
 <p>Args: path: Output file path</p>
 <p>Returns: <tt class="docutils literal"><span class="pre"><span class="Identifier">FastxDestination</span><span class="Punctuation">(</span><span class="Identifier">kind</span><span class="Punctuation">:</span> <span class="Identifier">fxdFile</span><span class="Punctuation">,</span> <span class="Identifier">path</span><span class="Punctuation">:</span> <span class="Identifier">path</span><span class="Punctuation">)</span></span></tt></p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L92" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L92" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L106" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L106" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -339,15 +423,86 @@
 </div>
 <div id="flush-procs-all">
   <div id="flush,FastxWriter">
-  <dt><pre><span class="Keyword">proc</span> <a href="#flush%2CFastxWriter"><span class="Identifier">flush</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span>
+  <dt><pre><span class="Keyword">proc</span> <a href="#flush%2CFastxWriter"><span class="Identifier">flush</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span>
     <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Flush pending buffered bytes to the destination stream.</p>
 <p>Notes: This writes the current application buffer. For gzip streams, final trailer bytes are emitted during <tt class="docutils literal"><span class="pre"><span class="Identifier">close</span></span></tt>.</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L138" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L138" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L152" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L152" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+<div id="flush,PairedFastxWriter">
+  <dt><pre><span class="Keyword">proc</span> <a href="#flush%2CPairedFastxWriter"><span class="Identifier">flush</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span>
+                                       <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Flush application buffers. Gzip trailers are finalized by close.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L605" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L605" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+
+</div>
+<div id="interleavedFastxWriter-procs-all">
+  <div id="interleavedFastxWriter,FastxDestination,FastxFormat,bool,int,int,int,int,bool">
+  <dt><pre><span class="Keyword">proc</span> <a href="#interleavedFastxWriter%2CFastxDestination%2CFastxFormat%2Cbool%2Cint%2Cint%2Cint%2Cint%2Cbool"><span class="Identifier">interleavedFastxWriter</span></a><span class="Other">(</span><span class="Identifier">destination</span><span class="Other">:</span> <a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a> <span class="Other">=</span> <span class="Identifier">stdoutDestination</span><span class="Other">(</span><span class="Other">)</span><span class="Other">;</span>
+                            <span class="Identifier">format</span><span class="Other">:</span> <a href="#FastxFormat"><span class="Identifier">FastxFormat</span></a> <span class="Other">=</span> <span class="Identifier">fxfFastq</span><span class="Other">;</span>
+                            <span class="Identifier">compression</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
+                            <span class="Identifier">bufferSize</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultBufferSize</span><span class="Other">;</span>
+                            <span class="Identifier">compressionLevel</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultCompressionLevel</span><span class="Other">;</span>
+                            <span class="Identifier">compressionThreads</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span>
+                            <span class="Identifier">fastaWidth</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultFastaWidth</span><span class="Other">;</span>
+                            <span class="Identifier">checkNames</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastConfigError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ExecIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span>
+    <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Open one output stream, writing each pair in R1/R2 order. Pointer fields are consumed immediately by writePair, before it returns.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L541" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L541" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+
+</div>
+<div id="isOpen-procs-all">
+  <div id="isOpen,PairedFastxWriter">
+  <dt><pre><span class="Keyword">proc</span> <a href="#isOpen%2CPairedFastxWriter"><span class="Identifier">isOpen</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Whether the paired writer still owns open streams, including after failure.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L491" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L491" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+
+</div>
+<div id="pairedFastxWriter-procs-all">
+  <div id="pairedFastxWriter,FastxDestination,FastxDestination,FastxFormat,bool,int,int,int,int,bool">
+  <dt><pre><span class="Keyword">proc</span> <a href="#pairedFastxWriter%2CFastxDestination%2CFastxDestination%2CFastxFormat%2Cbool%2Cint%2Cint%2Cint%2Cint%2Cbool"><span class="Identifier">pairedFastxWriter</span></a><span class="Other">(</span><span class="Identifier">destination1</span><span class="Other">,</span> <span class="Identifier">destination2</span><span class="Other">:</span> <a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a><span class="Other">;</span>
+                       <span class="Identifier">format</span><span class="Other">:</span> <a href="#FastxFormat"><span class="Identifier">FastxFormat</span></a> <span class="Other">=</span> <span class="Identifier">fxfFastq</span><span class="Other">;</span>
+                       <span class="Identifier">compression</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
+                       <span class="Identifier">bufferSize</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultBufferSize</span><span class="Other">;</span>
+                       <span class="Identifier">compressionLevel</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultCompressionLevel</span><span class="Other">;</span>
+                       <span class="Identifier">compressionThreads</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span>
+                       <span class="Identifier">fastaWidth</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="Identifier">DefaultFastaWidth</span><span class="Other">;</span>
+                       <span class="Identifier">checkNames</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">GzFastConfigError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span>
+    <span class="Identifier">CatchableError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span>
+    <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ExecIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Open split paired output. Each mate uses the same format/compression. At most one destination can be stdout. Both records are validated before either is buffered. Name checking accepts matching IDs or /1 and /2 suffixes.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L501" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L501" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -355,14 +510,41 @@
 </div>
 <div id="stdoutDestination-procs-all">
   <div id="stdoutDestination">
-  <dt><pre><span class="Keyword">proc</span> <a href="#stdoutDestination"><span class="Identifier">stdoutDestination</span></a><span class="Other">(</span><span class="Other">)</span><span class="Other">:</span> <a href="writer.html#FastxDestination"><span class="Identifier">FastxDestination</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#stdoutDestination"><span class="Identifier">stdoutDestination</span></a><span class="Other">(</span><span class="Other">)</span><span class="Other">:</span> <a href="#FastxDestination"><span class="Identifier">FastxDestination</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Create a stdout destination descriptor.</p>
 <p>Returns: <tt class="docutils literal"><span class="pre"><span class="Identifier">FastxDestination</span><span class="Punctuation">(</span><span class="Identifier">kind</span><span class="Punctuation">:</span> <span class="Identifier">fxdStdout</span><span class="Punctuation">)</span></span></tt></p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L85" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L85" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L99" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L99" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+
+</div>
+<div id="writePair-procs-all">
+  <div id="writePair,PairedFastxWriter,FQPair">
+  <dt><pre><span class="Keyword">proc</span> <a href="#writePair%2CPairedFastxWriter%2CFQPair"><span class="Identifier">writePair</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a><span class="Other">;</span> <span class="Identifier">pair</span><span class="Other">:</span> <a href="seqtypes.html#FQPair"><span class="Identifier">FQPair</span></a><span class="Other">)</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Validate both mates, then write them in order. Validation errors leave the writer usable; output errors mark it failed and must be propagated.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L596" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L596" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+
+  </dd>
+</div>
+<div id="writePair,PairedFastxWriter,FQPairPtr">
+  <dt><pre><span class="Keyword">proc</span> <a href="#writePair%2CPairedFastxWriter%2CFQPairPtr"><span class="Identifier">writePair</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#PairedFastxWriter"><span class="Identifier">PairedFastxWriter</span></a><span class="Other">;</span> <span class="Identifier">pair</span><span class="Other">:</span> <a href="seqtypes.html#FQPairPtr"><span class="Identifier">FQPairPtr</span></a><span class="Other">)</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Consume both pointer records immediately; no pointers are retained.
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L601" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L601" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -370,7 +552,7 @@
 </div>
 <div id="writeRecord-procs-all">
   <div id="writeRecord,FastxWriter,string,string,string,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2Cstring%2Cstring%2Cstring%2Cstring"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">name</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">sequence</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
+  <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2Cstring%2Cstring%2Cstring%2Cstring"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">name</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">sequence</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
                  <span class="Identifier">quality</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span> <span class="Identifier">comment</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">)</span> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
@@ -379,13 +561,13 @@
     <p>Convenience overload to write from scalar fields.</p>
 <p>Args: w: Writer instance name: Record identifier sequence: Sequence string quality: FASTQ quality string (required for FASTQ mode) comment: Optional header comment</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L275" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L275" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L289" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L289" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
 <div id="writeRecord,FastxWriter,FQRecord">
-  <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2CFQRecord"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">record</span><span class="Other">:</span> <a href="seqtypes.html#FQRecord"><span class="Identifier">FQRecord</span></a><span class="Other">)</span> {.
+  <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2CFQRecord"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">record</span><span class="Other">:</span> <a href="seqtypes.html#FQRecord"><span class="Identifier">FQRecord</span></a><span class="Other">)</span> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
@@ -394,13 +576,13 @@
 <p>Args: w: Writer instance record: Record to write</p>
 <p>Raises: IOError: If the writer is closed or I/O fails ValueError: If record validation fails for selected format</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L254" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L254" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L268" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L268" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
 <div id="writeRecord,FastxWriter,FQRecordPtr">
-  <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2CFQRecordPtr"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="writer.html#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">record</span><span class="Other">:</span> <a href="seqtypes.html#FQRecordPtr"><span class="Identifier">FQRecordPtr</span></a><span class="Other">)</span> {.
+  <dt><pre><span class="Keyword">proc</span> <a href="#writeRecord%2CFastxWriter%2CFQRecordPtr"><span class="Identifier">writeRecord</span></a><span class="Other">(</span><span class="Identifier">w</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="#FastxWriter"><span class="Identifier">FastxWriter</span></a><span class="Other">;</span> <span class="Identifier">record</span><span class="Other">:</span> <a href="seqtypes.html#FQRecordPtr"><span class="Identifier">FQRecordPtr</span></a><span class="Other">)</span> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">GzFastError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
@@ -411,8 +593,8 @@
 <p>Notes: Pointer fields are read immediately at call time and must still be valid — call this before advancing the reading iterator.</p>
 <p>Raises: IOError: If the writer is closed or I/O fails ValueError: If record validation fails for selected format</p>
 
-    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L292" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
-<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L292" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
+    <a href="https://github.com/quadram-institute-bioscience/readfx//tree/main/readfx/writer.nim#L306" class="link-seesrc" target="_blank">Source</a>&nbsp;&nbsp;
+<a href="https://github.com/quadram-institute-bioscience/readfx//edit/devel/readfx/writer.nim#L306" class="link-seesrc" target="_blank" >Edit</a>&nbsp;&nbsp;
 
   </dd>
 </div>
@@ -428,7 +610,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-08-27 12:58:12 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-10 20:07:52 UTC</small>
       </div>
     </div>
   </div>

@@ -10,13 +10,27 @@ nim	fxdFile	readfx/writer.html#fxdFile	FastxDestinationKind.fxdFile		45
 nim	FastxDestinationKind	readfx/writer.html#FastxDestinationKind	enum FastxDestinationKind		45
 nim	FastxDestination	readfx/writer.html#FastxDestination	object FastxDestination		50
 nim	FastxWriter	readfx/writer.html#FastxWriter	object FastxWriter		68
-nim	stdoutDestination	readfx/writer.html#stdoutDestination	proc stdoutDestination(): FastxDestination		85
-nim	fileDestination	readfx/writer.html#fileDestination,string	proc fileDestination(path: string): FastxDestination		92
-nim	flush	readfx/writer.html#flush,FastxWriter	proc flush(w: var FastxWriter)		138
-nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,FQRecord	proc writeRecord(w: var FastxWriter; record: FQRecord)		254
-nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,string,string,string,string	proc writeRecord(w: var FastxWriter; name: string; sequence: string;\n            quality: string = ""; comment: string = "")		275
-nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,FQRecordPtr	proc writeRecord(w: var FastxWriter; record: FQRecordPtr)		292
-nim	close	readfx/writer.html#close,FastxWriter	proc close(w: var FastxWriter)		321
-nim	fastxWriter	readfx/writer.html#fastxWriter,FastxFormat,bool,FastxDestination,int,int,int,int	proc fastxWriter(format: FastxFormat; compression: bool = false;\n            destination: FastxDestination = stdoutDestination();\n            bufferSize: int = DefaultBufferSize;\n            compressionLevel: int = DefaultCompressionLevel;\n            compressionThreads: int = 1; fastaWidth: int = DefaultFastaWidth): FastxWriter		389
-nimgrp	writerecord	readfx/writer.html#writeRecord-procs-all	proc		254
+nim	fxpSplit	readfx/writer.html#fxpSplit	PairedFastxLayout.fxpSplit		85
+nim	fxpInterleaved	readfx/writer.html#fxpInterleaved	PairedFastxLayout.fxpInterleaved		85
+nim	PairedFastxLayout	readfx/writer.html#PairedFastxLayout	enum PairedFastxLayout		85
+nim	PairedFastxWriter	readfx/writer.html#PairedFastxWriter	object PairedFastxWriter		89
+nim	stdoutDestination	readfx/writer.html#stdoutDestination	proc stdoutDestination(): FastxDestination		99
+nim	fileDestination	readfx/writer.html#fileDestination,string	proc fileDestination(path: string): FastxDestination		106
+nim	flush	readfx/writer.html#flush,FastxWriter	proc flush(w: var FastxWriter)		152
+nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,FQRecord	proc writeRecord(w: var FastxWriter; record: FQRecord)		268
+nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,string,string,string,string	proc writeRecord(w: var FastxWriter; name: string; sequence: string;\n            quality: string = ""; comment: string = "")		289
+nim	writeRecord	readfx/writer.html#writeRecord,FastxWriter,FQRecordPtr	proc writeRecord(w: var FastxWriter; record: FQRecordPtr)		306
+nim	close	readfx/writer.html#close,FastxWriter	proc close(w: var FastxWriter)		335
+nim	fastxWriter	readfx/writer.html#fastxWriter,FastxFormat,bool,FastxDestination,int,int,int,int	proc fastxWriter(format: FastxFormat; compression: bool = false;\n            destination: FastxDestination = stdoutDestination();\n            bufferSize: int = DefaultBufferSize;\n            compressionLevel: int = DefaultCompressionLevel;\n            compressionThreads: int = 1; fastaWidth: int = DefaultFastaWidth): FastxWriter		416
+nim	isOpen	readfx/writer.html#isOpen,PairedFastxWriter	proc isOpen(w: PairedFastxWriter): bool		491
+nim	pairedFastxWriter	readfx/writer.html#pairedFastxWriter,FastxDestination,FastxDestination,FastxFormat,bool,int,int,int,int,bool	proc pairedFastxWriter(destination1, destination2: FastxDestination;\n                  format: FastxFormat = fxfFastq; compression: bool = false;\n                  bufferSize: int = DefaultBufferSize;\n                  compressionLevel: int = DefaultCompressionLevel;\n                  compressionThreads: int = 1;\n                  fastaWidth: int = DefaultFastaWidth; checkNames: bool = false): PairedFastxWriter		501
+nim	interleavedFastxWriter	readfx/writer.html#interleavedFastxWriter,FastxDestination,FastxFormat,bool,int,int,int,int,bool	proc interleavedFastxWriter(destination: FastxDestination = stdoutDestination();\n                       format: FastxFormat = fxfFastq;\n                       compression: bool = false;\n                       bufferSize: int = DefaultBufferSize;\n                       compressionLevel: int = DefaultCompressionLevel;\n                       compressionThreads: int = 1;\n                       fastaWidth: int = DefaultFastaWidth;\n                       checkNames: bool = false): PairedFastxWriter		541
+nim	writePair	readfx/writer.html#writePair,PairedFastxWriter,FQPair	proc writePair(w: var PairedFastxWriter; pair: FQPair)		596
+nim	writePair	readfx/writer.html#writePair,PairedFastxWriter,FQPairPtr	proc writePair(w: var PairedFastxWriter; pair: FQPairPtr)		601
+nim	flush	readfx/writer.html#flush,PairedFastxWriter	proc flush(w: var PairedFastxWriter)		605
+nim	close	readfx/writer.html#close,PairedFastxWriter	proc close(w: var PairedFastxWriter)		616
+nimgrp	close	readfx/writer.html#close-procs-all	proc		335
+nimgrp	writerecord	readfx/writer.html#writeRecord-procs-all	proc		268
+nimgrp	writepair	readfx/writer.html#writePair-procs-all	proc		596
+nimgrp	flush	readfx/writer.html#flush-procs-all	proc		152
 heading	Fastx writer utilities for buffered FASTA/FASTQ output.	readfx/writer.html#fastx-writer-utilities-for-buffered-fastaslashfastq-outputdot	 Fastx writer utilities for buffered FASTA/FASTQ output.		0
