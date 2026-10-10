@@ -82,6 +82,20 @@ type
     ownsPlainHandle: bool
     outputBuffer: string
 
+  PairedFastxLayout* = enum
+    fxpSplit, ## R1 and R2 go to separate destinations
+    fxpInterleaved ## R1 followed by R2 in one destination
+
+  PairedFastxWriter* = object
+    ## Owns one or two FastxWriters. Do not copy an open writer.
+    ## Pair writes are not atomic across destinations: an I/O error may leave
+    ## unequal output counts. After such an error, only close is permitted.
+    layout: PairedFastxLayout
+    first, second: FastxWriter
+    open: bool
+    failed: bool
+    checkNames: bool
+
 proc stdoutDestination*(): FastxDestination =
   ## Create a stdout destination descriptor.
   ##
@@ -321,30 +335,41 @@ proc writeRecord*(w: var FastxWriter, record: FQRecordPtr) =
 proc close*(w: var FastxWriter) =
   ## Flush and close the writer stream.
   ##
-  ## It is safe to call `close` multiple times.
+  ## It is safe to call `close` multiple times, including after an I/O error.
+  ## Cleanup is attempted even if flushing fails; the first error is reported.
   if not w.isOpen:
     return
 
-  w.flush()
+  var error: ref CatchableError
+  template attemptCleanup(action: untyped) =
+    try:
+      action
+    except CatchableError as e:
+      if error == nil:
+        error = e
+
+  attemptCleanup(w.flush())
 
   case w.backend
   of fxbPlain:
     if w.ownsPlainHandle and w.plainFile != nil:
-      close(w.plainFile)
+      attemptCleanup(flushFile(w.plainFile))
+      attemptCleanup(close(w.plainFile))
     elif w.plainFile != nil:
-      flushFile(w.plainFile)
+      attemptCleanup(flushFile(w.plainFile))
   of fxbGzip:
     if w.gzWriter != nil:
-      w.gzWriter.close()
+      attemptCleanup(w.gzWriter.close())
   of fxbPigz:
     if w.pigzInput != nil:
-      w.pigzInput.flush()
-      w.pigzInput.close()
+      attemptCleanup(w.pigzInput.flush())
+      attemptCleanup(w.pigzInput.close())
     if w.pigzProc != nil:
-      let rc = waitForExit(w.pigzProc)
-      close(w.pigzProc)
-      if rc != 0:
-        raise newException(IOError, "pigz exited with code " & $rc)
+      attemptCleanup:
+        let rc = waitForExit(w.pigzProc)
+        if rc != 0:
+          raise newException(IOError, "pigz exited with code " & $rc)
+      attemptCleanup(close(w.pigzProc))
 
   w.plainFile = nil
   w.gzWriter = nil
@@ -352,6 +377,8 @@ proc close*(w: var FastxWriter) =
   w.pigzProc = nil
   w.isOpen = false
   w.outputBuffer.setLen(0)
+  if error != nil:
+    raise error
 
 proc gzipWriterConfig(level: int): GzFastWriteConfig =
   result = defaultGzFastWriteConfig()
@@ -460,3 +487,149 @@ proc fastxWriter*(
       result.ownsPlainHandle = false
 
   result.isOpen = true
+
+proc isOpen*(w: PairedFastxWriter): bool =
+  ## Whether the paired writer still owns open streams, including after failure.
+  w.open
+
+proc ensureOpen(w: PairedFastxWriter) =
+  if not w.open:
+    raise newException(IOError, "Paired writer is closed")
+  if w.failed:
+    raise newException(IOError, "Paired writer failed; close it before continuing")
+
+proc pairedFastxWriter*(
+    destination1, destination2: FastxDestination,
+    format: FastxFormat = fxfFastq,
+    compression: bool = false,
+    bufferSize: int = DefaultBufferSize,
+    compressionLevel: int = DefaultCompressionLevel,
+    compressionThreads: int = 1,
+    fastaWidth: int = DefaultFastaWidth,
+    checkNames: bool = false
+  ): PairedFastxWriter =
+  ## Open split paired output. Each mate uses the same format/compression.
+  ## At most one destination can be stdout. Both records are validated before
+  ## either is buffered. Name checking accepts matching IDs or /1 and /2 suffixes.
+  if destination1.kind == fxdStdout and destination2.kind == fxdStdout:
+    raise newException(ValueError, "Split paired output requires distinct destinations")
+  for destination in [destination1, destination2]:
+    if destination.kind == fxdFile and destination.path.len == 0:
+      raise newException(ValueError, "Destination path cannot be empty")
+  if destination1.kind == fxdFile and destination2.kind == fxdFile:
+    if normalizedPath(absolutePath(destination1.path)) ==
+        normalizedPath(absolutePath(destination2.path)):
+      raise newException(ValueError, "Split paired output requires distinct file paths")
+    if fileExists(destination1.path) and fileExists(destination2.path) and
+        sameFile(destination1.path, destination2.path):
+      raise newException(ValueError, "Split paired output destinations refer to the same file")
+  result.first = fastxWriter(format, compression, destination1, bufferSize,
+    compressionLevel, compressionThreads, fastaWidth)
+  try:
+    result.second = fastxWriter(format, compression, destination2, bufferSize,
+      compressionLevel, compressionThreads, fastaWidth)
+  except CatchableError:
+    try:
+      result.first.close()
+    except CatchableError:
+      discard
+    raise
+  result.layout = fxpSplit
+  result.checkNames = checkNames
+  result.open = true
+
+proc interleavedFastxWriter*(
+    destination: FastxDestination = stdoutDestination(),
+    format: FastxFormat = fxfFastq,
+    compression: bool = false,
+    bufferSize: int = DefaultBufferSize,
+    compressionLevel: int = DefaultCompressionLevel,
+    compressionThreads: int = 1,
+    fastaWidth: int = DefaultFastaWidth,
+    checkNames: bool = false
+  ): PairedFastxWriter =
+  ## Open one output stream, writing each pair in R1/R2 order.
+  ## Pointer fields are consumed immediately by writePair, before it returns.
+  result.first = fastxWriter(format, compression, destination, bufferSize,
+    compressionLevel, compressionThreads, fastaWidth)
+  result.layout = fxpInterleaved
+  result.checkNames = checkNames
+  result.open = true
+
+proc checkPairNames(w: PairedFastxWriter, name1, name2: string) =
+  if not w.checkNames:
+    return
+  let first = if name1.len >= 2 and name1[^2..^1] in ["/1", " 1"]: name1[0..^3] else: name1
+  let second = if name2.len >= 2 and name2[^2..^1] in ["/2", " 2"]: name2[0..^3] else: name2
+  if first != second:
+    raise newException(ValueError, "Pair name mismatch: '" & name1 & "' != '" & name2 & "'")
+
+proc validatePair(w: PairedFastxWriter, pair: FQPair) =
+  w.first.validateRecord(pair.read1)
+  w.first.validateRecord(pair.read2)
+  w.checkPairNames(pair.read1.name, pair.read2.name)
+
+proc validatePair(w: PairedFastxWriter, pair: FQPairPtr) =
+  w.first.validateRecord(pair.read1)
+  w.first.validateRecord(pair.read2)
+  if w.checkNames:
+    # Cached lengths exclude the terminating NUL.
+    var name1 = newString(pair.read1.nameLen)
+    var name2 = newString(pair.read2.nameLen)
+    copyMem(addr name1[0], pair.read1.name, name1.len)
+    copyMem(addr name2[0], pair.read2.name, name2.len)
+    w.checkPairNames(name1, name2)
+
+template writeValidatedPair(w, pair: untyped) =
+  ensureOpen(w)
+  validatePair(w, pair)
+  try:
+    w.first.writeRecord(pair.read1)
+    if w.layout == fxpSplit:
+      w.second.writeRecord(pair.read2)
+    else:
+      w.first.writeRecord(pair.read2)
+  except CatchableError:
+    w.failed = true
+    raise
+
+proc writePair*(w: var PairedFastxWriter, pair: FQPair) =
+  ## Validate both mates, then write them in order. Validation errors leave
+  ## the writer usable; output errors mark it failed and must be propagated.
+  writeValidatedPair(w, pair)
+
+proc writePair*(w: var PairedFastxWriter, pair: FQPairPtr) =
+  ## Consume both pointer records immediately; no pointers are retained.
+  writeValidatedPair(w, pair)
+
+proc flush*(w: var PairedFastxWriter) =
+  ## Flush application buffers. Gzip trailers are finalized by close.
+  ensureOpen(w)
+  try:
+    w.first.flush()
+    if w.layout == fxpSplit:
+      w.second.flush()
+  except CatchableError:
+    w.failed = true
+    raise
+
+proc close*(w: var PairedFastxWriter) =
+  ## Close both streams even if one close fails; report the first error.
+  ## Safe to call repeatedly. Close is allowed after a write/flush failure.
+  if not w.open:
+    return
+  var error: ref CatchableError
+  try:
+    w.first.close()
+  except CatchableError as e:
+    error = e
+  if w.layout == fxpSplit:
+    try:
+      w.second.close()
+    except CatchableError as e:
+      if error == nil:
+        error = e
+  w.open = false
+  if error != nil:
+    w.failed = true
+    raise error
