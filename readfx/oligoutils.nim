@@ -123,7 +123,9 @@ proc findOligoMatches*(sequence, primer: string, threshold: float, max_mismatche
 
       if mismatches > max_mismatches:
         break
- 
+
+    if primerRealLen == 0:
+      continue
     let
       score = float(matches) / float(primerRealLen)
     if score >= threshold and mismatches <= max_mismatches and matches >= min_matches:

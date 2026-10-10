@@ -154,14 +154,8 @@ proc filtPolyX*(read: FQRecord, minLen: int = 10,
       of 'T': baseCount[1] += 1
       of 'C': baseCount[2] += 1
       of 'G': baseCount[3] += 1
-      of 'N': 
-        # N could be any base, increment all
-        baseCount[0] += 1
-        baseCount[1] += 1
-        baseCount[2] += 1
-        baseCount[3] += 1
       else:
-        discard  # Handle unexpected characters
+        discard  # N and unexpected characters count as mismatches for all bases
     
     # Calculate allowed mismatches
     let current = position + 1
@@ -198,31 +192,19 @@ proc filtPolyX*(read: FQRecord, minLen: int = 10,
       result.quality = ""
     return result
   
-  # Only trim if the dominant base count meets or exceeds minLen and we need to trim
-  if maxCount >= minLen and position > 0:
-    # Get the dominant base
+  # Partial trim: dominant base meets minLen but run doesn't span the entire read
+  if maxCount >= minLen and position < readLength:
     let polyBase = "ATCG"[maxBase]
-    
-    # Find the exact position to trim at (avoid indexing outside the string)
-    var trimPos = position
-    var foundValidPos = false
-    var finalTrimPos = 0
-    
-    # Search for the last occurrence of polyBase within the window
-    while trimPos > 0:
-      let idx = readLength - trimPos
-      if idx >= 0 and idx < readLength and read.sequence[idx].toUpperAscii == polyBase:
-        foundValidPos = true
-        finalTrimPos = idx
+    # Find the first occurrence of polyBase in the poly-X window (left to right).
+    # Default to readLength - position if not found (shouldn't happen with minLen >= 2).
+    var trimPoint = readLength - position
+    for i in (readLength - position)..<readLength:
+      if read.sequence[i].toUpperAscii == polyBase:
+        trimPoint = i
         break
-      trimPos -= 1
-    
-    # Only trim if we found a valid position
-    if foundValidPos:
-      if finalTrimPos > 0:
-        result.sequence = read.sequence[0 ..< finalTrimPos]
-        if read.quality.len > 0:
-          result.quality = read.quality[0 ..< finalTrimPos]
+    result.sequence = read.sequence[0 ..< trimPoint]
+    if read.quality.len > 0:
+      result.quality = read.quality[0 ..< trimPoint]
   
   return result
 
