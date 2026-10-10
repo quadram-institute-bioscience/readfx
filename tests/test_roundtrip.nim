@@ -2,6 +2,9 @@ import unittest
 import os
 import random
 import strutils
+when defined(posix):
+  import posix
+  proc clearStreamError(stream: File) {.importc: "clearerr", header: "<stdio.h>".}
 
 import ../readfx
 
@@ -39,6 +42,269 @@ proc toTuples(records: seq[FQRecord]): seq[RecTuple] =
 
 proc tmpPath(name: string): string =
   getTempDir() / name
+
+proc borrowed(record: FQRecord): FQRecordPtr =
+  FQRecordPtr(name: cast[ptr char](record.name.cstring), nameLen: record.name.len,
+    comment: cast[ptr char](record.comment.cstring), commentLen: record.comment.len,
+    sequence: cast[ptr char](record.sequence.cstring), sequenceLen: record.sequence.len,
+    quality: cast[ptr char](record.quality.cstring), qualityLen: record.quality.len)
+
+test "paired writer: split/interleaved, plain/gzip, strings/pointers":
+  let source1 = "./tests/test_R1.fq"
+  let source2 = "./tests/test_R2.fq"
+  let expected1 = slurp(source1)
+  let expected2 = slurp(source2)
+  check expected1.len > 0
+  check expected1.len == expected2.len
+  for compression in [false, true]:
+    for interleaved in [false, true]:
+      for pointers in [false, true]:
+        for format in [fxfFastq, fxfFasta]:
+          let path1 = tmpPath("readfx_pair_writer_1.fastx")
+          let path2 = tmpPath("readfx_pair_writer_2.fastx")
+          var w = if interleaved:
+              interleavedFastxWriter(fileDestination(path1), format = format,
+                compression = compression, bufferSize = 1, checkNames = true)
+            else:
+              pairedFastxWriter(fileDestination(path1), fileDestination(path2),
+                format = format, compression = compression, bufferSize = 1,
+                checkNames = true)
+          try:
+            check w.isOpen
+            if pointers:
+              for pair in readFQPairPtr(source1, source2):
+                w.writePair(pair)
+            else:
+              for pair in readFQPair(source1, source2):
+                w.writePair(pair)
+            w.flush()
+            w.close()
+            w.close()
+            check not w.isOpen
+            var want1 = expected1
+            var want2 = expected2
+            if format == fxfFasta:
+              for rec in want1.mitems: rec.quality = ""
+              for rec in want2.mitems: rec.quality = ""
+            if interleaved:
+              var want: seq[RecTuple]
+              for i in 0..<want1.len:
+                want.add(want1[i])
+                want.add(want2[i])
+              check slurp(path1) == want
+              if format == fxfFastq:
+                var count = 0
+                for pair in readFQInterleavedPair(path1, checkNames = true):
+                  check pair.read1.sequence == want1[count].sequence
+                  check pair.read2.quality == want2[count].quality
+                  inc count
+                check count == want1.len
+            else:
+              check slurp(path1) == want1
+              check slurp(path2) == want2
+              var count = 0
+              for pair in readFQPair(path1, path2, checkNames = true):
+                check pair.read1.sequence == want1[count].sequence
+                check pair.read2.sequence == want2[count].sequence
+                inc count
+              check count == want1.len
+          finally:
+            w.close()
+            if fileExists(path1): removeFile(path1)
+            if fileExists(path2): removeFile(path2)
+
+test "paired writer: validation rejects whole pair and permits recovery":
+  for interleaved in [false, true]:
+    for pointers in [false, true]:
+      let path1 = tmpPath("readfx_pair_validate_1.fq")
+      let path2 = tmpPath("readfx_pair_validate_2.fq")
+      var w = if interleaved:
+          interleavedFastxWriter(fileDestination(path1), bufferSize = 1, checkNames = true)
+        else:
+          pairedFastxWriter(fileDestination(path1), fileDestination(path2),
+            bufferSize = 1, checkNames = true)
+      try:
+        var pair = FQPair(
+          read1: FQRecord(name: "read/1", sequence: "ACGT", quality: "IIII"),
+          read2: FQRecord(name: "read/2", sequence: "TGCA", quality: "I"))
+        template emit() =
+          if pointers:
+            w.writePair(FQPairPtr(read1: borrowed(pair.read1), read2: borrowed(pair.read2)))
+          else:
+            w.writePair(pair)
+        expect ValueError:
+          emit()
+        pair.read2.quality = "IIII"
+        pair.read2.name = "other/2"
+        expect ValueError:
+          emit()
+        w.flush()
+        check readFile(path1) == ""
+        if not interleaved: check readFile(path2) == ""
+        pair.read2.name = "read/2"
+        emit()
+        w.close()
+        check slurp(path1).len == (if interleaved: 2 else: 1)
+        if not interleaved: check slurp(path2).len == 1
+        expect IOError:
+          emit()
+        expect IOError:
+          w.flush()
+      finally:
+        w.close()
+        if fileExists(path1): removeFile(path1)
+        if fileExists(path2): removeFile(path2)
+
+test "paired writer: mate-name checking is optional":
+  let path = tmpPath("readfx_pair_names.fq")
+  var w = interleavedFastxWriter(fileDestination(path))
+  try:
+    w.writePair(FQPair(
+      read1: FQRecord(name: "one", sequence: "A", quality: "I"),
+      read2: FQRecord(name: "two", sequence: "T", quality: "I")))
+    w.close()
+    check slurp(path).len == 2
+  finally:
+    w.close()
+    if fileExists(path): removeFile(path)
+
+test "paired writer: reject overlapping destinations before opening":
+  let path = tmpPath("readfx_pair_same.fq")
+  writeFile(path, "preserve me")
+  try:
+    expect ValueError:
+      discard pairedFastxWriter(fileDestination(path), fileDestination(path))
+    expect ValueError:
+      discard pairedFastxWriter(fileDestination(path), fileDestination(parentDir(path) / "." / extractFilename(path)))
+    expect ValueError:
+      discard pairedFastxWriter(stdoutDestination(), stdoutDestination())
+    expect ValueError:
+      discard pairedFastxWriter(fileDestination(path), fileDestination(""))
+    check readFile(path) == "preserve me"
+  finally:
+    removeFile(path)
+
+test "paired writer: failed second open releases first destination":
+  let path = tmpPath("readfx_pair_open_cleanup.fq")
+  let directory = tmpPath("readfx_pair_open_directory")
+  createDir(directory)
+  try:
+    expect IOError:
+      discard pairedFastxWriter(fileDestination(path), fileDestination(directory))
+    # Removing the file also checks handle release on platforms that deny it
+    # while a file is open.
+    removeFile(path)
+  finally:
+    if fileExists(path): removeFile(path)
+    removeDir(directory)
+
+when defined(posix):
+  test "paired writer: write failure blocks reuse and still closes both streams":
+    for interleaved in [false, true]:
+      for compression in [false, true]:
+        let path = tmpPath("readfx_pair_failed_stdout.fq")
+        let readOnlyPath = tmpPath("readfx_pair_readonly.fq")
+        writeFile(readOnlyPath, "read only descriptor")
+        var readOnly = open(readOnlyPath, fmRead)
+        flushFile(stdout)
+        let savedStdout = posix.dup(1)
+        doAssert savedStdout >= 0
+        var w: PairedFastxWriter
+        var writeFailed, reuseFailed, flushFailed, closeFailed: bool
+        try:
+          doAssert posix.dup2(cint(getFileHandle(readOnly)), 1) >= 0
+          w = if interleaved:
+              interleavedFastxWriter(stdoutDestination(), compression = compression,
+                compressionLevel = 0, bufferSize = 1)
+            else:
+              pairedFastxWriter(fileDestination(path), stdoutDestination(),
+                compression = compression, compressionLevel = 0, bufferSize = 1)
+          let pair = FQPair(
+            read1: FQRecord(name: "read/1", sequence: repeat('A', 100000), quality: repeat('I', 100000)),
+            read2: FQRecord(name: "read/2", sequence: repeat('T', 100000), quality: repeat('I', 100000)))
+          try:
+            w.writePair(pair)
+          except CatchableError:
+            writeFailed = true
+          try:
+            w.writePair(pair)
+          except IOError:
+            reuseFailed = true
+          try:
+            w.flush()
+          except IOError:
+            flushFailed = true
+          try:
+            w.close()
+          except CatchableError:
+            closeFailed = true
+        finally:
+          try:
+            w.close()
+          except CatchableError:
+            discard
+          # stdio may retain bytes after a failed write. Drain them away from
+          # the test runner's stdout before restoring its descriptor.
+          var sink = open("/dev/null", fmWrite)
+          discard posix.dup2(cint(getFileHandle(sink)), 1)
+          clearStreamError(stdout)
+          flushFile(stdout)
+          discard posix.dup2(savedStdout, 1)
+          discard posix.close(savedStdout)
+          clearStreamError(stdout)
+          sink.close()
+          readOnly.close()
+          removeFile(readOnlyPath)
+        try:
+          check writeFailed
+          check reuseFailed
+          check flushFailed
+          check closeFailed
+          check not w.isOpen
+          w.close()
+          if not interleaved:
+            # R1 was written before R2 failed; its gzip trailer must still close.
+            check slurp(path).len == 1
+        finally:
+          if fileExists(path): removeFile(path)
+
+when defined(linux):
+  test "paired writer: output failure blocks writes and closes both streams":
+    for interleaved in [false, true]:
+      for compression in [false, true]:
+        let path = tmpPath("readfx_pair_io_failure.fq")
+        var w = if interleaved:
+            interleavedFastxWriter(fileDestination("/dev/full"), compression = compression,
+              compressionLevel = 0)
+          else:
+            pairedFastxWriter(fileDestination("/dev/full"), fileDestination(path),
+              compression = compression, compressionLevel = 0)
+        let pair = FQPair(
+          read1: FQRecord(name: "read/1", sequence: "A", quality: "I"),
+          read2: FQRecord(name: "read/2", sequence: "T", quality: "I"))
+        try:
+          w.writePair(pair)
+          expect CatchableError:
+            # Exceed stdio/compressor buffering to force a device write.
+            for i in 0..<10000:
+              w.writePair(pair)
+              w.flush()
+          expect IOError:
+            w.writePair(pair)
+          expect IOError:
+            w.flush()
+          try:
+            w.close()
+          except CatchableError:
+            discard
+          check not w.isOpen
+          w.close()
+        finally:
+          try:
+            w.close()
+          except CatchableError:
+            discard
+          if fileExists(path): removeFile(path)
 
 # ============================================================
 # Round-trip identity: read -> write -> read must be stable
